@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtCore import QDate, QTime, QDateTime, Qt 
+from PyQt5.QtCore import QDate, QTime, QDateTime, QObject, Qt, pyqtSignal
 from PyQt5.QtWidgets import(
         QApplication,QMainWindow, QWidget, QDesktopWidget,
         QToolTip, QPushButton, QMessageBox, QMenu, QAction, 
@@ -21,6 +21,9 @@ def onButtonClick():
     alert.setText("You clicked the button")
     alert.exec_
 
+class Communicate(QObject):
+    closeApp = pyqtSignal()
+
 #button.clicked.connect(onButtonClick)
 #button.show()
 #app.exec_()
@@ -41,7 +44,7 @@ class Example(QMainWindow):
         # Set the box layout:
         bgWidgets = QWidget(self)
         vbox = QVBoxLayout()
-
+        vbox.addStretch(1)
         # Row 1: use GridLayout set the buttons.
         if self.showButtons:
             grid = QGridLayout()
@@ -69,8 +72,10 @@ class Example(QMainWindow):
         hbox.addStretch(1)
 
         self.okBtn = QPushButton("OK", bgWidgets)
+        self.okBtn.clicked.connect(self.buttonClicked)
         hbox.addWidget(self.okBtn)
         self.cancelBtn = QPushButton("Cancel", bgWidgets)
+        self.cancelBtn.clicked.connect(self.buttonClicked)
         hbox.addWidget(self.cancelBtn)
 
         self.btn = QPushButton("Close window", bgWidgets)
@@ -84,13 +89,17 @@ class Example(QMainWindow):
         bgWidgets.show()
 
         self.setCentralWidget(bgWidgets)
-
+        # emit event from mouse click event:
+        self.comm = Communicate()
+        self.comm.closeApp.connect(self.close)
 
         self.stateB = self.statusBar()
         self.stateB.showMessage("ready")
         self.setTitle()
         self.setCenter()
         # Show the applicatoin. 
+        # Set evet
+        self.setMouseTracking(True)
         self.show()
 
     def buildTileArea(self):
@@ -123,6 +132,10 @@ class Example(QMainWindow):
         self.toolbar = self.addToolBar('exit')
         self.toolbar.addAction(exitAct)
 
+    def buttonClicked(self):
+        sender = self.sender()
+        print("Button clicked:"+sender.text())
+
     def contextMenuEvent(self, event):
         """ Add the right click pop-up context menu. 
         """
@@ -142,6 +155,13 @@ class Example(QMainWindow):
         print("The key you pressed is :"+str(e.key()))
         if e.key() == Qt.Key_Escape:
             self.close()
+
+    def mouseMoveEvent(self, e):
+        x, y = e.x(), e.y()
+        self.stateB.showMessage("x :{0}, y:{1}".format(x, y))
+
+    def mousePressEvetn(self, e):
+        self.comm.closeApp.emit()
 
     def setCenter(self):
         """ set the window to the center of the screen
