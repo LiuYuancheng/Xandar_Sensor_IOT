@@ -3,8 +3,8 @@ from PyQt5.QtCore import QDate, QTime, QDateTime, QObject, Qt, pyqtSignal
 from PyQt5.QtWidgets import(
         QApplication,QMainWindow, QWidget, QDesktopWidget,
         QToolTip, QPushButton, QMessageBox, QMenu, QAction, 
-        QHBoxLayout, QVBoxLayout, QGridLayout,
-        QLCDNumber, QSlider,
+        QHBoxLayout, QVBoxLayout, QGridLayout, QFrame, QLabel,
+        QLCDNumber, QSlider, QLineEdit, QInputDialog, QColorDialog, QFontDialog, QFileDialog,
         qApp)
 
 from PyQt5.QtGui import (QIcon, QFont)
@@ -37,14 +37,23 @@ class Example(QMainWindow):
         self.setTitle()
         self.setGeometry(300, 300, 400, 300)
         self.buildTileArea()
+
+
         self.showButtons = False
         # set the tool tips:
         QToolTip.setFont(QFont('SansSerif', 10))
         self.setToolTip("This is a <b> QWidget </b> widget")
+
         # Set the box layout:
-        bgWidgets = QWidget(self)
+        self.bgWidgets = QWidget(self)
+
+
         vbox = QVBoxLayout()
-        vbox.addStretch(1)
+        # Add the line edit used for the title area
+        self.le = QLineEdit(self.bgWidgets)
+        vbox.addWidget(self.le)
+        self.lbl = QLabel('Text string use to test different format string', self.bgWidgets)
+        vbox.addWidget(self.lbl)
         # Row 1: use GridLayout set the buttons.
         if self.showButtons:
             grid = QGridLayout()
@@ -61,9 +70,9 @@ class Example(QMainWindow):
                 grid.addWidget(button, x, y)
             vbox.addLayout(grid)
         else:
-            lcd = QLCDNumber(bgWidgets)
+            lcd = QLCDNumber(self.bgWidgets)
             vbox.addWidget(lcd)
-            sld = QSlider(Qt.Horizontal, bgWidgets)
+            sld = QSlider(Qt.Horizontal, self.bgWidgets)
             vbox.addWidget(sld)
             sld.valueChanged.connect(lcd.display)
 
@@ -71,24 +80,24 @@ class Example(QMainWindow):
         hbox = QHBoxLayout()
         hbox.addStretch(1)
 
-        self.okBtn = QPushButton("OK", bgWidgets)
+        self.okBtn = QPushButton("OK", self.bgWidgets)
         self.okBtn.clicked.connect(self.buttonClicked)
         hbox.addWidget(self.okBtn)
-        self.cancelBtn = QPushButton("Cancel", bgWidgets)
+        self.cancelBtn = QPushButton("Cancel", self.bgWidgets)
         self.cancelBtn.clicked.connect(self.buttonClicked)
         hbox.addWidget(self.cancelBtn)
 
-        self.btn = QPushButton("Close window", bgWidgets)
+        self.btn = QPushButton("Close window", self.bgWidgets)
         self.btn.resize(self.btn.sizeHint())
         self.btn.setToolTip("This is a <b> QwidgePushButton</b> widget")
         self.btn.clicked.connect(QApplication.instance().quit)
         hbox.addWidget(self.btn)
         vbox.addLayout(hbox)
         
-        bgWidgets.setLayout(vbox)
-        bgWidgets.show()
+        self.bgWidgets.setLayout(vbox)
+        self.bgWidgets.show()
 
-        self.setCentralWidget(bgWidgets)
+        self.setCentralWidget(self.bgWidgets)
         # emit event from mouse click event:
         self.comm = Communicate()
         self.comm.closeApp.connect(self.close)
@@ -105,6 +114,12 @@ class Example(QMainWindow):
     def buildTileArea(self):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('File')
+
+        fileAct = QAction(QIcon('open.png'), 'Open', self)
+        fileAct.setShortcut('Ctrl+O')
+        fileAct.setStatusTip('Pop up file selection dialog.')
+        fileAct.triggered.connect(self.popUPfillin)
+        fileMenu.addAction(fileAct)
         # Add the file bar.  
         exitAct = QAction(QIcon('exit.png'), '&exit', self)
         exitAct.setShortcut('Ctrl+Q')
@@ -112,8 +127,21 @@ class Example(QMainWindow):
         exitAct.triggered.connect(qApp.quit)
         fileMenu.addAction(exitAct) 
         impMenu = QMenu('Import', self)
-        impAct = QAction('Import emsil', self)
-        impMenu.addAction(impAct)
+        # Add the import email action. 
+        impEmAct = QAction('Import email', self)
+        impEmAct.triggered.connect(self.popUPfillin)
+        impMenu.addAction(impEmAct)
+
+        # Add the import color selection action. 
+        impCoAct = QAction('Import bgColor', self)
+        impCoAct.triggered.connect(self.popUPfillin)
+        impMenu.addAction(impCoAct)
+        
+        # Add the text format change selection action. 
+        impFtAct = QAction('Import font', self)
+        impFtAct.triggered.connect(self.popUPfillin)
+        impMenu.addAction(impFtAct)
+
         fileMenu.addMenu(impMenu)
         # Add the view bar 
         viewAction = QAction('View statusbar', self, checkable=True)
@@ -192,6 +220,28 @@ class Example(QMainWindow):
         size = self.frameGeometry()
         #print("this is the qusize"+str(size))
         self.btn.move(100, 100)
+
+    def popUPfillin(self, event):
+        sender = self.sender()
+        print("This is the sender: "+str(sender.text()))
+        senderStr = sender.text()
+        if senderStr == 'Import email':
+            text, ok = QInputDialog.getText(self.bgWidgets, 'Email', 
+                'Enter your email:')
+            if ok: self.le.setText(str(text))
+        elif senderStr == 'Import bgColor':
+            col = QColorDialog.getColor()
+            if col.isValid():
+                self.setStyleSheet("QWidget { background-color: %s }" % col.name())
+        elif senderStr == 'Import font':
+            font, ok = QFontDialog.getFont()
+            if ok: self.lbl.setFont(font)
+        else:
+            fname = QFileDialog.getOpenFileName(self, 'Open file', 'C:')
+            if fname[0]:
+                with open(fname[0], 'r') as f:
+                    data = f.read()
+                    self.le.setText(str(data))
 
     def closeEvent(self, event):
         """ pop-up confirm window for user to confirm quit action.
