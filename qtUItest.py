@@ -1,5 +1,7 @@
 import sys
-from PyQt5.QtCore import QDate, QTime, QDateTime, QObject, Qt, pyqtSignal
+from PyQt5.QtCore import (QDate, QTime, QDateTime, QObject, 
+    Qt, QBasicTimer, QDate, pyqtSignal)
+
 from PyQt5.QtWidgets import(
     # Qt main widget:
     QApplication, QMainWindow, QWidget, QDesktopWidget, QFrame,
@@ -7,10 +9,11 @@ from PyQt5.QtWidgets import(
     QHBoxLayout, QVBoxLayout, QGridLayout,
     # Qt components:
     QToolTip, QPushButton, QMessageBox, QMenu, QAction, QLabel,
-    QLCDNumber, QSlider, QLineEdit, QCheckBox,
+    QLCDNumber, QSlider, QLineEdit, QCheckBox, QProgressBar, QCalendarWidget,
     # Qt dialogs:
     QInputDialog, QColorDialog, QFontDialog, QFileDialog,
     qApp)
+
 from PyQt5.QtGui import (QIcon, QFont)
 
 nowStr = QDate.currentDate()
@@ -77,11 +80,21 @@ class TestUI(QMainWindow):
 
         # Add the buttons
         self.cb = QCheckBox("Change the window title", self)
-        self.cb.toggle()
+        self.cb.setChecked(False)
+        #self.cb.toggle()
         self.cb.stateChanged.connect(self.changeTitle)
         vbox.addWidget(self.cb)
-
-
+        # add the progress bar
+        self.pbar = QProgressBar(self.bgWidgets)
+        self.pbarStep = 0 
+        vbox.addWidget(self.pbar)
+        self.timer = QBasicTimer()
+        # add the calendat
+        self.cal = QCalendarWidget(self.bgWidgets)
+        self.cal.setGridVisible(True)
+        self.cal.clicked[QDate].connect(self.showDate)
+        vbox.addWidget(self.cal)
+        # 
         hbox = QHBoxLayout()
         hbox.addStretch(1)
         self.okBtn = QPushButton("OK", self.bgWidgets)
@@ -171,12 +184,14 @@ class TestUI(QMainWindow):
         sender = self.sender()
         print("Button clicked:"+sender.text())
 
+    #-----------------------------------------------------------------------------
     def changeTitle(self, state):
         if state == Qt.Checked:
-            self.setWindowTitle("XAKA sensor reader ")
+            self.setWindowTitle("Progress start")
+            self.timer.start(100, self)
         else:
-            self.setWindowTitle(" ")
-
+            self.setWindowTitle("Progress stop")
+            self.timer.stop()
     #-----------------------------------------------------------------------------
     def contextMenuEvent(self, event):
         """ Add the right click pop-up context menu. 
@@ -262,6 +277,21 @@ class TestUI(QMainWindow):
                 with open(fname[0], 'r') as f:
                     data = f.read()
                     self.le.setText(str(data))
+
+    #-----------------------------------------------------------------------------
+    def showDate(self, date):
+        self.setWindowTitle("Date:"+str(date.toString()))
+
+    #-----------------------------------------------------------------------------
+    def timerEvent(self, event):
+        if self.pbarStep >= 100:
+            self.timer.stop()
+            self.setWindowTitle("Progress stop")
+            self.pbarStep = 0 
+            return
+        else: 
+            self.pbarStep += 1
+            self.pbar.setValue(self.pbarStep)
 
     #-----------------------------------------------------------------------------
     def closeEvent(self, event):
