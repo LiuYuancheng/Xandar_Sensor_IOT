@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import(
     QHBoxLayout, QVBoxLayout, QGridLayout,
     # Qt components:
     QToolTip, QPushButton, QMessageBox, QMenu, QAction, QLabel,
-    QLCDNumber, QSlider, QLineEdit,
+    QLCDNumber, QSlider, QLineEdit, QCheckBox,
     # Qt dialogs:
     QInputDialog, QColorDialog, QFontDialog, QFileDialog,
     qApp)
@@ -37,7 +37,7 @@ class TestUI(QMainWindow):
     #-----------------------------------------------------------------------------
     def initUI(self):
         self.setTitle()
-        self.setGeometry(300, 300, 400, 300)
+        self.setGeometry(300, 300, 400, 450)
         self.buildTileArea()
         self.showButtons = False
         # set the tool tips:
@@ -76,6 +76,12 @@ class TestUI(QMainWindow):
             sld.valueChanged.connect(lcd.display)
 
         # Add the buttons
+        self.cb = QCheckBox("Change the window title", self)
+        self.cb.toggle()
+        self.cb.stateChanged.connect(self.changeTitle)
+        vbox.addWidget(self.cb)
+
+
         hbox = QHBoxLayout()
         hbox.addStretch(1)
         self.okBtn = QPushButton("OK", self.bgWidgets)
@@ -164,6 +170,12 @@ class TestUI(QMainWindow):
     def buttonClicked(self):
         sender = self.sender()
         print("Button clicked:"+sender.text())
+
+    def changeTitle(self, state):
+        if state == Qt.Checked:
+            self.setWindowTitle("XAKA sensor reader ")
+        else:
+            self.setWindowTitle(" ")
 
     #-----------------------------------------------------------------------------
     def contextMenuEvent(self, event):
@@ -261,7 +273,6 @@ class TestUI(QMainWindow):
             event.accept()
         else:
             event.ignore()
-
 
 
 if __name__ == '__main__':
