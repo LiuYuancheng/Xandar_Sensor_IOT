@@ -1,4 +1,20 @@
+#!/usr/bin/python
+#-----------------------------------------------------------------------------
+# Name:        XAqtUItest.py
+#
+# Purpose:     This module is used to test the Qt ui widgets. 
+#
+# Author:      Yuancheng Liu
+#
+# Created:     2019/03/27
+# Copyright:   YC
+# License:     YC
+#-----------------------------------------------------------------------------
+
 import sys
+from collections import Iterable
+
+# import QT UI lib 
 from PyQt5.QtCore import (QDate, QTime, QDateTime, QObject, 
     Qt, QBasicTimer, QDate, pyqtSignal)
 
@@ -204,6 +220,16 @@ class TestUI(QMainWindow):
         # Check the user selection.
         print("user selected the action:" + str(action))
         if action == quitAct: qApp.quit()
+    #-----------------------------------------------------------------------------
+    
+    def flatten(self, items, ignoreType = (str, bytes)):
+        """ This function is used to flatten the nested list. 
+        """
+        for x in items: 
+            if isinstance(x, Iterable) and not isinstance(x, ignoreType):
+                yield from self.flatten(x, ignoreType)
+            else:
+                yield x 
 
     #-----------------------------------------------------------------------------
     def keyPressEvent(self, e):
