@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import(
     # Qt main widget:
     QApplication, QMainWindow, QWidget, QDesktopWidget, QFrame,
     # Qt Layout:
-    QHBoxLayout, QVBoxLayout, QGridLayout,
+    QHBoxLayout, QVBoxLayout, QGridLayout, QSplitter,
     # Qt components:
     QToolTip, QPushButton, QMessageBox, QMenu, QAction, QLabel, QComboBox,
     QLCDNumber, QSlider, QLineEdit, QCheckBox, QProgressBar, QCalendarWidget,
@@ -44,7 +44,7 @@ class Communicate(QObject):
     closeApp = pyqtSignal()
 
 
-class Example(QWidget):
+class popUpwindow(QWidget):
     
     def __init__(self):
         super().__init__()
@@ -72,6 +72,26 @@ class Example(QWidget):
         self.lbl.setText(text)
         self.lbl.adjustSize()   
 
+#class dragButton(QPushButton):#
+#
+#    def __init__(self, title, parent):
+#        super().__init__(title, parent)
+
+
+class dropButton(QPushButton):
+
+    def __init__(self, title, parent):
+        super().__init__(title, parent)
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasFormat('text/plain'):
+            e.accept()
+        else:
+            e.ignore()
+
+    def dropEvent(self, e):
+        self.setText(e.mimeData().text())
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -103,18 +123,32 @@ class TestUI(QMainWindow):
         self.lbl = QLabel(
             'Over lay a Q pix map on the label below:', self.bgWidgets)
         vbox.addWidget(self.lbl)
+        # Add the QSpliter here: 
+        self.spliter = QSplitter(Qt.Horizontal)
         self.plbl = QLabel(self.bgWidgets)
         self.plbl.setPixmap(QPixmap('logo.jpg'))
-        vbox.addWidget(self.plbl)
+        self.spliter.addWidget(self.plbl)
+        # Add the Qframe at the right side.
+        right = QFrame(self.bgWidgets)
+        right.setFrameStyle(QFrame.StyledPanel)
+        # put the drag and drop things in the QFrame:
+        edit = QLineEdit('', right)
+        edit.setDragEnabled(True)
+        edit.move(5,5)
+
+        dbt = dropButton('Button', right)
+        dbt.move(5, 40)
+
+        self.spliter.addWidget(right)
+        vbox.addWidget(self.spliter)
         # Add the combo box:
         self.combo = QComboBox(self.bgWidgets)
         self.combo.addItem("exit.png")
         self.combo.addItem("icon.jpg")
-        self.combo.addItem("logo.png")
+        self.combo.addItem("logo.jpg")
         self.combo.addItem("open.png")
         self.combo.activated[str].connect(self.onActivated)
         vbox.addWidget(self.combo)
-
         # Row 1: use GridLayout set the buttons.
         if self.showButtons:
             grid = QGridLayout()
@@ -356,7 +390,10 @@ class TestUI(QMainWindow):
                     self.le.setText(str(data))  
 
     def onActivated(self, text):
-        print("This is the actived choice: "+str(text))
+        try:
+            self.plbl.setPixmap(QPixmap(text))
+        except:
+            print("The select file is not exit: "+str(text))
 
     #-----------------------------------------------------------------------------
     def showDate(self, date):
@@ -383,7 +420,6 @@ class TestUI(QMainWindow):
             event.accept()
         else:
             event.ignore()
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
