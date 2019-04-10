@@ -12,7 +12,7 @@
 #-----------------------------------------------------------------------------
 
 import sys
-from collections import Iterable
+from collections.abc import Iterable
 
 # import QT UI lib 
 from PyQt5.QtCore import (QDate, QTime, QDateTime, QObject, 
@@ -24,13 +24,13 @@ from PyQt5.QtWidgets import(
     # Qt Layout:
     QHBoxLayout, QVBoxLayout, QGridLayout,
     # Qt components:
-    QToolTip, QPushButton, QMessageBox, QMenu, QAction, QLabel,
+    QToolTip, QPushButton, QMessageBox, QMenu, QAction, QLabel, QComboBox,
     QLCDNumber, QSlider, QLineEdit, QCheckBox, QProgressBar, QCalendarWidget,
     # Qt dialogs:
     QInputDialog, QColorDialog, QFontDialog, QFileDialog,
     qApp)
 
-from PyQt5.QtGui import (QIcon, QFont)
+from PyQt5.QtGui import (QIcon, QFont, QPixmap)
 
 nowStr = QDate.currentDate()
 dateTimeStr = QDateTime.currentDateTime()
@@ -42,6 +42,36 @@ class Communicate(QObject):
     """ function used to emit contorl 
     """
     closeApp = pyqtSignal()
+
+
+class Example(QWidget):
+    
+    def __init__(self):
+        super().__init__()
+        
+        self.initUI()
+        
+        
+    def initUI(self):      
+
+        self.lbl = QLabel(self)
+        qle = QLineEdit(self)
+        
+        qle.move(60, 100)
+        self.lbl.move(60, 40)
+
+        qle.textChanged[str].connect(self.onChanged)
+        
+        self.setGeometry(300, 300, 280, 170)
+        self.setWindowTitle('QLineEdit')
+        self.show()
+        
+        
+    def onChanged(self, text):
+        
+        self.lbl.setText(text)
+        self.lbl.adjustSize()   
+
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -68,10 +98,23 @@ class TestUI(QMainWindow):
         vbox = QVBoxLayout()
         # Add the line edit used for the title area
         self.le = QLineEdit(self.bgWidgets)
+        self.le.textChanged[str].connect(self.lineEditChanged)
         vbox.addWidget(self.le)
         self.lbl = QLabel(
-            'Text string use to test different format string', self.bgWidgets)
+            'Over lay a Q pix map on the label below:', self.bgWidgets)
         vbox.addWidget(self.lbl)
+        self.plbl = QLabel(self.bgWidgets)
+        self.plbl.setPixmap(QPixmap('logo.jpg'))
+        vbox.addWidget(self.plbl)
+        # Add the combo box:
+        self.combo = QComboBox(self.bgWidgets)
+        self.combo.addItem("exit.png")
+        self.combo.addItem("icon.jpg")
+        self.combo.addItem("logo.png")
+        self.combo.addItem("open.png")
+        self.combo.activated[str].connect(self.onActivated)
+        vbox.addWidget(self.combo)
+
         # Row 1: use GridLayout set the buttons.
         if self.showButtons:
             grid = QGridLayout()
@@ -199,7 +242,10 @@ class TestUI(QMainWindow):
     def buttonClicked(self):
         sender = self.sender()
         print("Button clicked:"+sender.text())
-
+        if sender.text() == 'OK':
+            #popFrame = Example()
+            pass 
+            
     #-----------------------------------------------------------------------------
     def changeTitle(self, state):
         if state == Qt.Checked:
@@ -237,6 +283,11 @@ class TestUI(QMainWindow):
         """
         print("The key you pressed is :"+str(e.key()))
         if e.key() == Qt.Key_Escape: self.close()
+    
+    def lineEditChanged(self, textStr):
+        """ listen the line test change: 
+        """
+        self.lbl.setText(str(textStr))
 
     #-----------------------------------------------------------------------------
     def mouseMoveEvent(self, e):
@@ -302,7 +353,10 @@ class TestUI(QMainWindow):
             if fname[0]:
                 with open(fname[0], 'r') as f:
                     data = f.read()
-                    self.le.setText(str(data))
+                    self.le.setText(str(data))  
+
+    def onActivated(self, text):
+        print("This is the actived choice: "+str(text))
 
     #-----------------------------------------------------------------------------
     def showDate(self, date):
