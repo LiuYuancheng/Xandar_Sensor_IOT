@@ -16,7 +16,7 @@ from collections.abc import Iterable
 
 # import QT UI lib 
 from PyQt5.QtCore import (QDate, QTime, QDateTime, QObject, 
-    Qt, QBasicTimer, QDate, pyqtSignal)
+    Qt, QBasicTimer, QDate, QMimeData, pyqtSignal)
 
 from PyQt5.QtWidgets import(
     # Qt main widget:
@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import(
     QInputDialog, QColorDialog, QFontDialog, QFileDialog,
     qApp)
 
-from PyQt5.QtGui import (QIcon, QFont, QPixmap)
+from PyQt5.QtGui import (QIcon, QFont, QPixmap, QDrag)
 
 nowStr = QDate.currentDate()
 dateTimeStr = QDateTime.currentDateTime()
@@ -72,10 +72,24 @@ class popUpwindow(QWidget):
         self.lbl.setText(text)
         self.lbl.adjustSize()   
 
-#class dragButton(QPushButton):#
-#
-#    def __init__(self, title, parent):
-#        super().__init__(title, parent)
+class dragButton(QPushButton):
+
+    def __init__(self, title, parent):
+        super().__init__(title, parent)
+
+    def mouseMoveEvent(self, e):
+        if e.buttons() != Qt.RightButton:
+            return
+        mineData = QMimeData()
+        drag = QDrag(self)
+        drag.setMimeData(mineData)
+        drag.setHotSpot(e.pos() - self.rect().topLeft())
+        dropAction = drag.exec_(Qt.MoveAction)
+
+    def mousePressEvent(self, e):
+        super().mousePressEvent(e)
+        if e.button() == Qt.LeftButton:
+            print("press")
 
 
 class dropButton(QPushButton):
