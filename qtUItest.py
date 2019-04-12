@@ -1,22 +1,22 @@
 #!/usr/bin/python
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Name:        XAqtUItest.py
 #
-# Purpose:     This module is used to test the Qt ui widgets. 
+# Purpose:     This module is used to test the Qt ui widgets.
 #
 # Author:      Yuancheng Liu
 #
 # Created:     2019/03/27
 # Copyright:   YC
 # License:     YC
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 import sys
 from collections.abc import Iterable
 
-# import QT UI lib 
-from PyQt5.QtCore import (QDate, QTime, QDateTime, QObject, 
-    Qt, QBasicTimer, QDate, QMimeData, pyqtSignal)
+# import QT UI lib
+from PyQt5.QtCore import (Qt, QObject, QDate, QTime, QDateTime,
+                          QBasicTimer, QDate, QMimeData, pyqtSignal)
 
 from PyQt5.QtWidgets import(
     # Qt main widget:
@@ -36,79 +36,98 @@ nowStr = QDate.currentDate()
 dateTimeStr = QDateTime.currentDateTime()
 timeStr = QTime.currentTime()
 
-#-----------------------------------------------------------------------------
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
 class Communicate(QObject):
-    """ function used to emit contorl 
+    """ function used to emit contorl. 
     """
     closeApp = pyqtSignal()
 
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 
 class popUpwindow(QWidget):
-    
+    """ Create a pop-up window. 
+    """
+
     def __init__(self):
         super().__init__()
-        
         self.initUI()
-        
-        
-    def initUI(self):      
+    # -----------------------------------------------------------------------------
 
+    def initUI(self):
         self.lbl = QLabel(self)
         qle = QLineEdit(self)
-        
         qle.move(60, 100)
         self.lbl.move(60, 40)
-
         qle.textChanged[str].connect(self.onChanged)
-        
         self.setGeometry(300, 300, 280, 170)
         self.setWindowTitle('QLineEdit')
         self.show()
-        
-        
+    # -----------------------------------------------------------------------------
     def onChanged(self, text):
-        
+
         self.lbl.setText(text)
-        self.lbl.adjustSize()   
+        self.lbl.adjustSize()
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 
 class dragButton(QPushButton):
+    """ A button can be dragged to a new position by holding mouse right button. 
+    """
 
     def __init__(self, title, parent):
         super().__init__(title, parent)
 
+    # -----------------------------------------------------------------------------
     def mouseMoveEvent(self, e):
         if e.buttons() != Qt.RightButton:
             return
+        print("move mv in action")
         mineData = QMimeData()
         drag = QDrag(self)
         drag.setMimeData(mineData)
         drag.setHotSpot(e.pos() - self.rect().topLeft())
-        dropAction = drag.exec_(Qt.MoveAction)
+        drag.exec_(Qt.MoveAction)
 
+    # -----------------------------------------------------------------------------
     def mousePressEvent(self, e):
         super().mousePressEvent(e)
         if e.button() == Qt.LeftButton:
-            print("press")
+            print("button pressed")
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 class dropButton(QPushButton):
+    """ A button user can drop text to replace the button's orignal text.
+    """
 
     def __init__(self, title, parent):
         super().__init__(title, parent)
         self.setAcceptDrops(True)
+    # -----------------------------------------------------------------------------
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
             e.accept()
         else:
             e.ignore()
+    # -----------------------------------------------------------------------------
 
     def dropEvent(self, e):
         self.setText(e.mimeData().text())
 
-#-----------------------------------------------------------------------------
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
 class TestUI(QMainWindow):
     """ Test UI used to test the QT function. 
     """
@@ -117,7 +136,7 @@ class TestUI(QMainWindow):
         super().__init__()
         self.initUI()
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def initUI(self):
         self.setTitle()
         self.setGeometry(300, 300, 400, 450)
@@ -137,23 +156,13 @@ class TestUI(QMainWindow):
         self.lbl = QLabel(
             'Over lay a Q pix map on the label below:', self.bgWidgets)
         vbox.addWidget(self.lbl)
-        # Add the QSpliter here: 
+        # Add the QSpliter here:
         self.spliter = QSplitter(Qt.Horizontal)
         self.plbl = QLabel(self.bgWidgets)
         self.plbl.setPixmap(QPixmap('logo.jpg'))
         self.spliter.addWidget(self.plbl)
         # Add the Qframe at the right side.
-        right = QFrame(self.bgWidgets)
-        right.setFrameStyle(QFrame.StyledPanel)
-        # put the drag and drop things in the QFrame:
-        edit = QLineEdit('', right)
-        edit.setDragEnabled(True)
-        edit.move(5,5)
-
-        dbt = dropButton('Button', right)
-        dbt.move(5, 40)
-
-        self.spliter.addWidget(right)
+        self.spliter.addWidget(self.buildDragDropFrame())
         vbox.addWidget(self.spliter)
         # Add the combo box:
         self.combo = QComboBox(self.bgWidgets)
@@ -188,20 +197,19 @@ class TestUI(QMainWindow):
         # Add the buttons
         self.cb = QCheckBox("Change the window title", self)
         self.cb.setChecked(False)
-        #self.cb.toggle()
         self.cb.stateChanged.connect(self.changeTitle)
         vbox.addWidget(self.cb)
         # add the progress bar
         self.pbar = QProgressBar(self.bgWidgets)
-        self.pbarStep = 0 
+        self.pbarStep = 0
         vbox.addWidget(self.pbar)
-        self.timer = QBasicTimer()
+        self.timer = QBasicTimer() # time used for the progress bar. 
         # add the calendat
         self.cal = QCalendarWidget(self.bgWidgets)
         self.cal.setGridVisible(True)
         self.cal.clicked[QDate].connect(self.showDate)
         vbox.addWidget(self.cal)
-        # 
+        #
         hbox = QHBoxLayout()
         hbox.addStretch(1)
         self.okBtn = QPushButton("OK", self.bgWidgets)
@@ -223,7 +231,7 @@ class TestUI(QMainWindow):
         # emit event from mouse click event:
         self.comm = Communicate()
         self.comm.closeApp.connect(self.close)
-        # Set the main widow status bar. 
+        # Set the main widow status bar.
         self.stateB = self.statusBar()
         self.stateB.showMessage("ready")
         self.setTitle()
@@ -233,26 +241,25 @@ class TestUI(QMainWindow):
         # Show the applicatoin.
         self.show()
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def buildTileArea(self):
         """ Build the window title bar. 
         """
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('File')
-        # Add the file selection menu 
+        # Add the file selection menu
         fileAct = QAction(QIcon('open.png'), 'Open', self)
         fileAct.setShortcut('Ctrl+O')
         fileAct.setStatusTip('Pop up file selection dialog.')
         fileAct.triggered.connect(self.popUPfillin)
         fileMenu.addAction(fileAct)
-        # Add the exist menu 
+        # Add the exist menu
         exitAct = QAction(QIcon('exit.png'), '&exit', self)
         exitAct.setShortcut('Ctrl+Q')
         exitAct.setStatusTip("Exit application")
         exitAct.triggered.connect(qApp.quit)
         fileMenu.addAction(exitAct)
-        
-        # Add the import menu:  
+        # Add the import menu:
         impMenu = QMenu('Import', self)
         # Add the import email action.
         impEmAct = QAction('Import email', self)
@@ -267,7 +274,6 @@ class TestUI(QMainWindow):
         impFtAct.triggered.connect(self.popUPfillin)
         impMenu.addAction(impFtAct)
         fileMenu.addMenu(impMenu)
-
         # Add the view bar
         viewAction = QAction('View statusbar', self, checkable=True)
         viewAction.setStatusTip('View statusbar')
@@ -286,15 +292,34 @@ class TestUI(QMainWindow):
         self.toolbar.addAction(fileAct)
         self.toolbar.addAction(exitAct)
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
+    def buildDragDropFrame(self):
+        """ build the from for the drag and drop function test. 
+        """
+        bgframe = QFrame(self.bgWidgets)
+        bgframe.setFrameStyle(QFrame.StyledPanel)
+        # put the drag and drop things in the QFrame:
+        edit = QLineEdit('', bgframe)
+        edit.setDragEnabled(True)
+        edit.move(5, 5)
+
+        dbt = dropButton('dropButton', bgframe)
+        dbt.move(5, 40)
+        self.setAcceptDrops(True)  # active this is very important.
+
+        self.dragBt = dragButton("dragButton", bgframe)
+        self.dragBt.move(5, 60)
+        return bgframe
+
+    # -----------------------------------------------------------------------------
     def buttonClicked(self):
         sender = self.sender()
         print("Button clicked:"+sender.text())
         if sender.text() == 'OK':
             #popFrame = Example()
-            pass 
-            
-    #-----------------------------------------------------------------------------
+            pass
+
+    # -----------------------------------------------------------------------------
     def changeTitle(self, state):
         if state == Qt.Checked:
             self.setWindowTitle("Progress start")
@@ -302,7 +327,8 @@ class TestUI(QMainWindow):
         else:
             self.setWindowTitle("Progress stop")
             self.timer.stop()
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
+
     def contextMenuEvent(self, event):
         """ Add the right click pop-up context menu. 
         """
@@ -313,40 +339,56 @@ class TestUI(QMainWindow):
         action = cmenu.exec_(self.mapToGlobal(event.pos()))
         # Check the user selection.
         print("user selected the action:" + str(action))
-        if action == quitAct: qApp.quit()
-    #-----------------------------------------------------------------------------
+        if action == quitAct:
+            qApp.quit()
+    # -----------------------------------------------------------------------------
+    def dragEnterEvent(self, e):
+        e.accept()
+
+    # -----------------------------------------------------------------------------
+    def dropEvent(self, e):
+        """ Move the dragged button to a ceter position. 
+        """
+        position = e.pos()
+        print("move to position "+repr(position))
+        self.dragBt.move(40, 80)
+        e.setDropAction(Qt.MoveAction)
+        e.accept()
     
-    def flatten(self, items, ignoreType = (str, bytes)):
+    # -----------------------------------------------------------------------------
+    def flatten(self, items, ignoreType=(str, bytes)):
         """ This function is used to flatten the nested list. 
         """
-        for x in items: 
+        for x in items:
             if isinstance(x, Iterable) and not isinstance(x, ignoreType):
                 yield from self.flatten(x, ignoreType)
             else:
-                yield x 
+                yield x
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def keyPressEvent(self, e):
         """ listen the key press event. 
         """
         print("The key you pressed is :"+str(e.key()))
-        if e.key() == Qt.Key_Escape: self.close()
-    
+        if e.key() == Qt.Key_Escape:
+            self.close()
+
+    # -----------------------------------------------------------------------------
     def lineEditChanged(self, textStr):
         """ listen the line test change: 
         """
         self.lbl.setText(str(textStr))
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def mouseMoveEvent(self, e):
         x, y = e.x(), e.y()
         self.stateB.showMessage("x :{0}, y:{1}".format(x, y))
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def mousePressEvetn(self, e):
         self.comm.closeApp.emit()
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def setCenter(self):
         """ set the window to the center of the screen
         """
@@ -355,7 +397,7 @@ class TestUI(QMainWindow):
         size.moveCenter(centerPt)
         self.move(size.topLeft())
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def setTitle(self):
         """ Set the title bar of the window.
         """
@@ -363,14 +405,14 @@ class TestUI(QMainWindow):
         self.setWindowIcon(QIcon('icon.jpg'))
         self.menubar = self.menuBar()
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def toggleMenu(self, state):
         if state:
             self.stateB.show()
         else:
             self.stateB.hide()
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def moveButton(self, evet):
         """ Test move the button to the center poition. 
         """
@@ -379,7 +421,7 @@ class TestUI(QMainWindow):
         #print("this is the qusize"+str(size))
         self.btn.move(100, 100)
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def popUPfillin(self, event):
         sender = self.sender()
         print("This is the sender: "+str(sender.text()))
@@ -387,7 +429,8 @@ class TestUI(QMainWindow):
         if senderStr == 'Import email':
             text, ok = QInputDialog.getText(self.bgWidgets, 'Email',
                                             'Enter your email:')
-            if ok: self.le.setText(str(text))
+            if ok:
+                self.le.setText(str(text))
         elif senderStr == 'Import bgColor':
             col = QColorDialog.getColor()
             if col.isValid():
@@ -395,36 +438,38 @@ class TestUI(QMainWindow):
                     "QWidget { background-color: %s }" % col.name())
         elif senderStr == 'Import font':
             font, ok = QFontDialog.getFont()
-            if ok: self.lbl.setFont(font)
+            if ok:
+                self.lbl.setFont(font)
         else:
             fname = QFileDialog.getOpenFileName(self, 'Open file', 'C:')
             if fname[0]:
                 with open(fname[0], 'r') as f:
                     data = f.read()
-                    self.le.setText(str(data))  
+                    self.le.setText(str(data))
 
+    # -----------------------------------------------------------------------------
     def onActivated(self, text):
         try:
             self.plbl.setPixmap(QPixmap(text))
         except:
             print("The select file is not exit: "+str(text))
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def showDate(self, date):
         self.setWindowTitle("Date:"+str(date.toString()))
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def timerEvent(self, event):
         if self.pbarStep >= 100:
             self.timer.stop()
             self.setWindowTitle("Progress stop")
-            self.pbarStep = 0 
+            self.pbarStep = 0
             return
-        else: 
+        else:
             self.pbarStep += 1
             self.pbar.setValue(self.pbarStep)
 
-    #-----------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------
     def closeEvent(self, event):
         """ pop-up confirm window for user to confirm quit action.
         """
@@ -434,6 +479,7 @@ class TestUI(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
