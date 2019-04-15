@@ -72,7 +72,6 @@ class MyFrame(wx.Frame):
         """
         wx.Frame.__init__(self, parent, id ,title, size=(400, 750))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
-        self.createMenu()
         self.dataList = [0] *len(LABEL_LIST)
         self.valueDispList = []
         bgPanel = wx.Panel(self)
@@ -90,7 +89,8 @@ class MyFrame(wx.Frame):
         self.thread1 = commThread(1, "Thread-1", 1)
         self.thread1.start()
         # Init the serial reader
-        self.ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=1)
+        #self.ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=1)
+        self.ser = serial.Serial('COM4', 115200, 8, 'N', 1, timeout=1)
         self.dataList = []
         self.floatDataNum = 0
         self.ledtg = 0
@@ -115,7 +115,7 @@ class MyFrame(wx.Frame):
                     data = item[i*4:i*4+4]
                     val = unpack('i', data) if i == 0 or i == 1 else unpack('<f',data) # get the ID and parameter number 
                     self.dataList.append(val[0])
-        # Update the UI.     
+        # Update the UI. 
         for i in range(len(self.valueDispList)): 
             self.valueDispList[i].SetLabel(str(self.dataList[i]))
         # Send the message to TCP server. 
