@@ -1,3 +1,15 @@
+#!/usr/bin/python
+# -----------------------------------------------------------------------------
+# Name:        qtCWidegt.py
+#
+# Purpose:     This module is create a customized widget.
+#
+# Author:      Yuancheng Liu
+#
+# Created:     2019/04/17
+# Copyright:   YC
+# License:     YC
+# -----------------------------------------------------------------------------
 import sys
 from PyQt5.QtWidgets import (QWidget, QSlider, QApplication, QHBoxLayout,
                              QHBoxLayout, QVBoxLayout, QMainWindow)
@@ -8,11 +20,11 @@ from PyQt5.QtGui import (QPainter, QFont, QColor, QPen, QBrush)
 
 OVER_CAPACITY = 750
 
-
+# -----------------------------------------------------------------------------
 class Communiate(QObject):
     updateBW = pyqtSignal(int)
 
-
+# -----------------------------------------------------------------------------
 class ProgressWidget(QWidget):
 
     def __init__(self):
@@ -35,8 +47,7 @@ class ProgressWidget(QWidget):
 
     def drawWidget(self, event, qp):
         maxCapacity = 700
-        font = QFont('Serif', 7, QFont.Light)
-        qp.setFont(font)
+        qp.setFont(QFont('Serif', 7, QFont.Light))
         size = self.size()
         w, h = size.width(), size.height()
         
@@ -46,16 +57,14 @@ class ProgressWidget(QWidget):
         qp.setPen(QPen(QColor(255, 255, 255)))
         qp.setBrush(QBrush(QColor(255, 255, 184)))
         qp.drawRect(0, 0, till, h)
-
+        # Draw he red part if the value extend. 
         if self.value > maxCapacity:
             qp.setPen(QColor(255, 175, 175))
             qp.setBrush(QColor(255, 175, 175))
             qp.drawRect(full, 0, till-full, h)
-
         # Draw the scal marker: 
-        pen = QPen(QColor(20, 20, 20), 1,  Qt.SolidLine)
-        qp.setPen(pen)
-        qp.setBrush(Qt.NoBrush)
+        qp.setPen(QPen(QColor(20, 20, 20), 1,  Qt.SolidLine))
+        qp.setBrush(Qt.NoBrush) # transpareny
         qp.drawRect(0, 0, w-1, h-1)
         step = int(round(w/10))
         for idx, i in enumerate (range(step, 10*step, step)):
@@ -64,6 +73,8 @@ class ProgressWidget(QWidget):
             fw = metrics.width(str(self.num[idx]))
             qp.drawText(i-fw/2, h/2, str(self.num[idx]))
 
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 class CWidegt(QWidget):
 
     def __init__(self):
@@ -82,14 +93,9 @@ class CWidegt(QWidget):
         self.c.updateBW[int].connect(self.wid.setValue)
         self.sld.valueChanged[int].connect(self.changeValue)
         
-
         vbox = QVBoxLayout()
         vbox.addStretch(1)
-
-        hbox = QHBoxLayout()
-        hbox.addWidget(self.wid)
-        
-        vbox.addLayout(hbox)
+        vbox.addWidget(self.wid)
         self.setLayout(vbox)
 
         self.setGeometry(300, 300, 390, 210)
