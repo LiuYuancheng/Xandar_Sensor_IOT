@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 #-----------------------------------------------------------------------------
-# Name:        XAKAsensor reader.py
+# Name:        TCP.py
 #
-# Purpose:     This function is used to read the data from XAKA people counting
-#              sensor and show the data in the UI list.
-#
+# Purpose:     A TCP client program used to connect to the sensor reader program
+#              to pull down the data.
 # Author:      Yuancheng Liu
 #
 # Created:     2019/03/27
@@ -21,7 +20,6 @@ TCP_PORT = 5005
 BUFFER_SIZE = 1024
 MESSAGE = "request data."
 pIactiveFlag = True
-
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((TCP_IP, TCP_PORT))

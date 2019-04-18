@@ -15,7 +15,7 @@ import glob
 import serial
 
 def serial_ports():
-    """ Lists serial port names
+    """ Lists used serial port names
 
         :raises EnvironmentError:
             On unsupported or unknown platforms
@@ -34,6 +34,7 @@ def serial_ports():
 
     result = []
     for port in ports:
+        # Check whether the port can be open. 
         try:
             s = serial.Serial(port)
             s.close()
@@ -41,7 +42,6 @@ def serial_ports():
         except (OSError, serial.SerialException):
             pass
     return result
-
 
 if __name__ == '__main__':
     print(serial_ports())

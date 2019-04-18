@@ -15,4 +15,15 @@ with open('eepData.txt', 'r') as f:
             subprocess.call('clear')
         if startPrint: print(line)
 
+#from Crypto.PublicKey import RSA
+#key = RSA.generate(1024)
+#f = open("private.pem", "wb")
+#f.write(key.exportKey('PEM'))
+#f.close()
+
+#pubkey = key.publickey()
+#f = open("public.pem", "wb")
+#f.write(pubkey.exportKey('OpenSSH'))
+#f.close()
+#!/usr/bin/env python
 

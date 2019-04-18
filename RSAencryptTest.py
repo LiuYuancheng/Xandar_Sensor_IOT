@@ -1,14 +1,3 @@
-#from Crypto.PublicKey import RSA
-#key = RSA.generate(1024)
-#f = open("private.pem", "wb")
-#f.write(key.exportKey('PEM'))
-#f.close()
-
-#pubkey = key.publickey()
-#f = open("public.pem", "wb")
-#f.write(pubkey.exportKey('OpenSSH'))
-#f.close()
-#!/usr/bin/env python
 """
 Very simple HTTP server in python.
 Usage::
@@ -20,7 +9,7 @@ Send a HEAD request::
 Send a POST request::
     curl -d "foo=bar&bin=baz" http://localhost
 """
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer # python2.7 lib. 
 import SocketServer
 from random import *
 
