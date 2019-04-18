@@ -19,7 +19,6 @@ from PyQt5.QtGui import (QPainter, QColor, QFont, QPen, QBrush, QPainterPath)
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-
 class PaintTest(QWidget):
 
     def __init__(self):
