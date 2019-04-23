@@ -13,6 +13,7 @@
 import sys
 import glob
 import serial
+from datetime import datetime
 
 def serial_ports():
     """ Lists used serial port names
@@ -41,6 +42,12 @@ def serial_ports():
             result.append(port)
         except (OSError, serial.SerialException):
             pass
+    # Log the reasult into the log file. 
+    now = datetime.now()
+    timeStr = now.strftime("%m_%d_%H_%M")
+    logName = ''.join(("CommLog", timeStr, '.txt'))
+    with open(logName, 'at') as f:
+        print(now.strftime("%m/%d/%Y, %H:%M:%S  ") + str(result), file = f)
     return result
 
 if __name__ == '__main__':
