@@ -14,11 +14,14 @@
 
 import wx # use wx to build the UI.
 import os
+import io
 import time
 import serial, string
 from struct import *
 import threading
 import socket
+from functools import partial
+
 
 # TCP connection: 
 TCP_IP = '127.0.0.1'
@@ -90,7 +93,7 @@ class MyFrame(wx.Frame):
         self.thread1.start()
         # Init the serial reader
         #self.ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=1)
-        self.ser = serial.Serial('COM4', 115200, 8, 'N', 1, timeout=1)
+        self.ser = serial.Serial('COM6', 115200, 8, 'N', 1, timeout=1)
         self.dataList = []
         self.floatDataNum = 0
         self.ledtg = 0
@@ -111,10 +114,14 @@ class MyFrame(wx.Frame):
         for item in bset: 
             if len(item) == 148:
                 self.dataList = []
-                for i in range(37):
-                    data = item[i*4:i*4+4]
-                    val = unpack('i', data) if i == 0 or i == 1 else unpack('<f',data) # get the ID and parameter number 
+                for idx, data in enumerate(iter(partial(io.BytesIO(item).read, 4), b'')):
+                    val = unpack('i', data) if idx == 0 or idx == 1 else unpack(
+                        '<f', data)  # get the ID and parameter number
                     self.dataList.append(val[0])
+                #for i in range(37):
+                #    data = item[i*4:i*4+4]
+                #    val = unpack('i', data) if i == 0 or i == 1 else unpack('<f',data) # get the ID and parameter number 
+                #    self.dataList.append(val[0])
         # Update the UI. 
         for i in range(len(self.valueDispList)): 
             self.valueDispList[i].SetLabel(str(self.dataList[i]))
