@@ -21,6 +21,9 @@ from struct import *
 import threading
 import socket
 from functools import partial
+import time
+import timeout_decorator
+
 
 SERVER_CHOICE = {
     "LocalDefault [127.0.0.1]"    : ('127.0.0.1', 5005),
@@ -123,23 +126,31 @@ class FirmwareSignTool(wx.Frame):
             print("TCP connection fault")
             self.tcpClient = None
 
-
     def loginServ(self, event):
         if self.tcpClient is None: return 
         user = self.userFI.GetLineText(0)
         pwd = self.pwdFI.GetLineText(0)
-        print(":".join([user, pwd]))
-        if user == '123' and pwd == '123':
-            self.tcpClient.send(b'login')
-        else:
-            return
-        data = self.tcpClient.recv(BUFFER_SIZE)
-        if data == b'Done':
+        loginStr = ";".join(['L', user, pwd])
+        self.tcpClient.send(loginStr.encode('utf-8'))
+        replay = self.tcpClient.recv(BUFFER_SIZE)
+        if replay == b'Done':
             self.signBt.Enable(True)
+            self.fetchCert()
+            self.statusbar.SetStatusText("Login suscessful")
         else:
             self.signBt.Enable(False)
+            self.statusbar.SetStatusText("UserName or password invalid")
 
+        #self.statusbar.SetStatusText("No response to the server, please reconnect.")
 
+    def fetchCert(self):
+        self.tcpClient.send(b'Fetch')
+        f = open("firmwSign\\receivered.cer", "wb")
+        # here we assument the file not more than 4K 
+        data = self.tcpClient.recv(4096)
+        f.write(data)
+        f.close()
+        print ("got the file")
 
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):
