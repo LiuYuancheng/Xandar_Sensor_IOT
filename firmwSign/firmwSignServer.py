@@ -37,13 +37,9 @@ while not terminate:
                 f_send = "publickey.cer"
                 with open(f_send, "rb") as f:
                     data = f.read()
-                    sys.getsizeof(data)
-
-
                     conn.sendall(data)
             else:
                 dataStr= data.decode('utf-8')
-
                 args =  dataStr.split(';')
                 tag = args[0]
                 if tag == 'L':
