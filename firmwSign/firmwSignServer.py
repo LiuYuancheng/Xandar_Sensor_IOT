@@ -1,3 +1,16 @@
+#!/usr/bin/python
+#-----------------------------------------------------------------------------
+# Name:        firmwareSignServer.py
+#
+# Purpose:     This module is used to connect to the firmware sign client and:
+#               - Check the certificate fetch request valid
+#               - Send the certificate file and decrypt the message. 
+# Author:      Yuancheng Liu
+#
+# Created:     2019/04/29
+# Copyright:   YC
+# License:     YC
+#-----------------------------------------------------------------------------
 import sys
 import socket
 import chilkat
