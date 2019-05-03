@@ -23,7 +23,9 @@ import socket
 from functools import partial
 import time
 import timeout_decorator
-
+import hashlib
+from datetime import datetime
+import chilkat
 
 SERVER_CHOICE = {
     "LocalDefault [127.0.0.1]"    : ('127.0.0.1', 5005),
@@ -31,6 +33,9 @@ SERVER_CHOICE = {
     "Server_2 [192.168.0.101]"  : ('192.168.0.101', 5005)
 }
 BUFFER_SIZE = 1024
+SENSOR_ID = '100'
+ENCODE_MODE = 'hex'
+CER_PATH = "C:\\Project\\testProgram\\IOT\\IOT\\firmwSign\\receivered.cer"
 
 
 class FirmwareSignTool(wx.Frame):
@@ -42,6 +47,16 @@ class FirmwareSignTool(wx.Frame):
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         # init parameter here: 
         self.tcpClient = None 
+
+        # Create the RSA encrypter
+        self.rsaEncryptor = chilkat.CkRsa()
+        if not self.rsaEncryptor.UnlockComponent("Anything for 30-day trial"):
+            print("RSA component unlock failed")
+            sys.exit()
+        self.rsaEncryptor.put_EncodingMode(ENCODE_MODE)
+
+
+        self.firmwarePath = "C:\\Project\\testProgram\IOT\IOT\\firmwSign\\firmwareSample"
 
         # Init the UI here. 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -84,7 +99,7 @@ class FirmwareSignTool(wx.Frame):
         # Set the firmware file path: 
         hbox_3 = wx.BoxSizer(wx.HORIZONTAL)
         hbox_3.Add(wx.StaticText(self, label='FirmwarePath:'), flag=flagsR, border=2)
-        self.fmpath = wx.TextCtrl(self, -1, "C:\Project\\testProgram\IOT\IOT\\firmwSign\\firmwareSample", size=(300, -1), style=wx.TE_PROCESS_ENTER)
+        self.fmpath = wx.TextCtrl(self, -1, self.firmwarePath, size=(300, -1), style=wx.TE_PROCESS_ENTER)
         self.fmpath.SetBackgroundColour(wx.Colour(200, 210, 200))
         hbox_3.Add(self.fmpath, flag=flagsR, border=2)
         self.changeBt = wx.Button(self, label='change', size=(70, 24))
@@ -92,6 +107,7 @@ class FirmwareSignTool(wx.Frame):
         sizer.Add(hbox_3, flag=flagsR, border=2)
         sizer.AddSpacer(5)
         self.signBt = wx.Button(self, label='Sign firmware', size=(100, 24))
+        self.signBt.Bind(wx.EVT_BUTTON, self.signFirmware)
         self.signBt.Enable(False)
         sizer.Add(self.signBt, flag=flagsR, border=2)
         self.SetSizer(sizer)
@@ -151,6 +167,52 @@ class FirmwareSignTool(wx.Frame):
         f.write(data)
         f.close()
         print ("got the file")
+
+    def getMD5Hash(self, fname):
+        hash_md5 = hashlib.md5()
+        with open(fname, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+
+    def LoadCert(self):
+        if not os.path.exists(CER_PATH):
+            print("The certificate file is not exist")
+            return
+        cert = chilkat.CkCert()
+        success = cert.LoadFromFile(CER_PATH)
+        if not success:
+            print(cert.lastErrorText())
+            return
+        pubKey = cert.ExportPublicKey()
+        #xml = chilkat.CkXml()
+        #xml.LoadXml(pubKey.getXml())
+
+        success = self.rsaEncryptor.ImportPublicKey(pubKey.getXml())
+
+    def sendEncryptedStr(self, dataStr):
+
+        usePrivateKey = False
+        encryptedStr = self.rsaEncryptor.encryptStringENC(dataStr, usePrivateKey)
+        return encryptedStr
+
+    def signFirmware(self, event): 
+        print("sign the firmware")
+        self.LoadCert()
+        idStr = '202'
+        md5str = str(self.getMD5Hash(self.firmwarePath))
+        print("firare hash:" + md5str)
+        now = datetime.now()
+        dataStr = now.strftime("%d/%m/%Y")
+        typeStr = 'XKAK_PPL_COUNT'
+        version = '1.01'
+        mapStr = ';'.join([idStr, md5str, dataStr, typeStr, version ])
+        print("This is map string data: " + mapStr)
+        sendStr = self.sendEncryptedStr(mapStr)
+        print(sendStr)
+        if self.tcpClient: 
+            self.tcpClient.sendall(sendStr.encode('utf-8'))
+
 
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):

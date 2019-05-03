@@ -84,6 +84,7 @@ print('Done')
 
 # Decript the string and get the message. 
 print("4. Decrypt the message to plain text")
+
 # decriped
 rsaDecryptor = chilkat.CkRsa()
 if not rsaDecryptor.UnlockComponent("Anything for 30-day trial"):
