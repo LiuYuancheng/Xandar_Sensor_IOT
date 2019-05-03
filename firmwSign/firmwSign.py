@@ -1,43 +1,41 @@
 #!/usr/bin/python
 #-----------------------------------------------------------------------------
-# Name:       firmwareSign.py
+# Name:        firmwareSign.py
 #
-# Purpose:     This function is used to read the data from XAKA people counting
-#              sensor and show the data in the UI list.
-#
+# Purpose:     This module is used to connect to the firmware sign server and:
+#               - Login to authorize the user and download the sign sertificate file.
+#               - Sign the file MD5Hash and related informaiton.
 # Author:      Yuancheng Liu
 #
-# Created:     2019/03/27
+# Created:     2019/04/29
 # Copyright:   YC
 # License:     YC
 #-----------------------------------------------------------------------------
 
-import wx # use wx to build the UI.
 import os
-import io
+import wx # use wx to build the UI.
+import sys
 import time
-import serial, string
-from struct import *
-import threading
 import socket
-from functools import partial
-import time
-import timeout_decorator
 import hashlib
+import chilkat # need to pip install this lib.
+from functools import partial
 from datetime import datetime
-import chilkat
-
+# Server ip list:
 SERVER_CHOICE = {
     "LocalDefault [127.0.0.1]"    : ('127.0.0.1', 5005),
     "Server_1 [192.168.0.100]"  : ('192.168.0.100', 5005),
     "Server_2 [192.168.0.101]"  : ('192.168.0.101', 5005)
 }
+# 
 BUFFER_SIZE = 1024
 SENSOR_ID = '100'
 ENCODE_MODE = 'hex'
 CER_PATH = "C:\\Project\\testProgram\\IOT\\IOT\\firmwSign\\receivered.cer"
+DEFUALT_FW= "C:\\Project\\testProgram\IOT\IOT\\firmwSign\\firmwareSample"
 
-
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 class FirmwareSignTool(wx.Frame):
 
     def __init__(self, parent, id, title):
@@ -45,8 +43,8 @@ class FirmwareSignTool(wx.Frame):
         """
         wx.Frame.__init__(self, parent, id, title, size=(450, 200))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
-        # init parameter here: 
-        self.tcpClient = None 
+        # init parameter here:
+        self.tcpClient = None
 
         # Create the RSA encrypter
         self.rsaEncryptor = chilkat.CkRsa()
@@ -54,14 +52,27 @@ class FirmwareSignTool(wx.Frame):
             print("RSA component unlock failed")
             sys.exit()
         self.rsaEncryptor.put_EncodingMode(ENCODE_MODE)
+        self.firmwarePath = DEFUALT_FW
 
+        # Init the UI here.
+        self.hidenWidgetList = []
+        mainUISizer = self.buildUISizer()
+        self.SetSizer(mainUISizer)
+        self.statusbar = self.CreateStatusBar(1)
+        self.statusbar.SetStatusText(
+            'Please select the server you want to connect')
+        # Hide the not active widgets.
+        self.hideWidgets(hide=True)
+        self.Show()
 
-        self.firmwarePath = "C:\\Project\\testProgram\IOT\IOT\\firmwSign\\firmwareSample"
-
-        # Init the UI here. 
+#-----------------------------------------------------------------------------
+    def buildUISizer(self):
+        """ Build the main UI sizer
+        """
         sizer = wx.BoxSizer(wx.VERTICAL)
         flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
         sizer.AddSpacer(5)
+        # row idx = 1 server selection:
         hbox_1 = wx.BoxSizer(wx.HORIZONTAL)
         hbox_1.Add(wx.StaticText(self, label='Server Selection: '),
                    flag=flagsR, border=2)
@@ -77,32 +88,36 @@ class FirmwareSignTool(wx.Frame):
         self.lgLb = wx.StaticText(self, label='Login [unconnected]: ')
         sizer.Add(self.lgLb, flag=flagsR, border=2)
         sizer.AddSpacer(5)
+        # row idx = 2 user login area:
         hbox_2 = wx.BoxSizer(wx.HORIZONTAL)
         hbox_2.Add(wx.StaticText(self, label=' '), flag=flagsR, border=2)
         self.userLb = wx.StaticText(self, label='UserName:')
         hbox_2.Add(self.userLb, flag=flagsR, border=2)
-        self.userFI = wx.TextCtrl(self, -1, "", size=(100, -1), style=wx.TE_PROCESS_ENTER)
-        #self.userFI.SetEditable(False)
+        self.userFI = wx.TextCtrl(
+            self, -1, "", size=(100, -1), style=wx.TE_PROCESS_ENTER)
         self.userFI.SetBackgroundColour(wx.Colour(200, 200, 200))
         hbox_2.Add(self.userFI, flag=flagsR, border=2)
         self.pwdLb = wx.StaticText(self, label='PassWord:')
         hbox_2.Add(self.pwdLb, flag=flagsR, border=2)
-        self.pwdFI = wx.TextCtrl(self, -1, "", size=(100, -1), style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER)
-        #self.pwdFI.SetEditable(False)
+        self.pwdFI = wx.TextCtrl(
+            self, -1, "", size=(100, -1), style=wx.TE_PASSWORD | wx.TE_PROCESS_ENTER)
         self.pwdFI.SetBackgroundColour(wx.Colour(200, 200, 200))
         hbox_2.Add(self.pwdFI, flag=flagsR, border=2)
         self.lgBt = wx.Button(self, label='LogIn', size=(70, 24))
-        self.lgBt.Bind(wx.EVT_BUTTON, self.loginServ)
+        self.lgBt.Bind(wx.EVT_BUTTON, self.loginServer)
         hbox_2.Add(self.lgBt, flag=flagsR, border=2)
         sizer.Add(hbox_2, flag=flagsR, border=2)
         sizer.AddSpacer(10)
-        # Set the firmware file path: 
+        # row idx = 3 Set the firmware file path:
         hbox_3 = wx.BoxSizer(wx.HORIZONTAL)
-        hbox_3.Add(wx.StaticText(self, label='FirmwarePath:'), flag=flagsR, border=2)
-        self.fmpath = wx.TextCtrl(self, -1, self.firmwarePath, size=(300, -1), style=wx.TE_PROCESS_ENTER)
+        hbox_3.Add(wx.StaticText(self, label='FirmwarePath:'),
+                   flag=flagsR, border=2)
+        self.fmpath = wx.TextCtrl(
+            self, -1, self.firmwarePath, size=(300, -1), style=wx.TE_PROCESS_ENTER)
         self.fmpath.SetBackgroundColour(wx.Colour(200, 210, 200))
         hbox_3.Add(self.fmpath, flag=flagsR, border=2)
         self.changeBt = wx.Button(self, label='change', size=(70, 24))
+        self.changeBt.Bind(wx.EVT_BUTTON, self.changeFMPath)
         hbox_3.Add(self.changeBt, flag=flagsR, border=2)
         sizer.Add(hbox_3, flag=flagsR, border=2)
         sizer.AddSpacer(5)
@@ -110,72 +125,89 @@ class FirmwareSignTool(wx.Frame):
         self.signBt.Bind(wx.EVT_BUTTON, self.signFirmware)
         self.signBt.Enable(False)
         sizer.Add(self.signBt, flag=flagsR, border=2)
-        self.SetSizer(sizer)
-        self.statusbar = self.CreateStatusBar(1)
-        self.statusbar.SetStatusText('Please select the server you want to connect')
-        # Hide the not active widgets. 
-        self.userLb.Hide()
-        self.userFI.Hide()
-        self.pwdLb.Hide()
-        self.pwdFI.Hide()
-        self.lgBt.Hide()
-        self.Show()
+        self.hidenWidgetList.append(self.userLb)
+        self.hidenWidgetList.append(self.userFI)
+        self.hidenWidgetList.append(self.pwdLb)
+        self.hidenWidgetList.append(self.pwdFI)
+        self.hidenWidgetList.append(self.lgBt)
+        return sizer
 
+#-----------------------------------------------------------------------------
+    def changeFMPath(self, event):
+        """ Change the firmware file path. 
+        """
+        with wx.FileDialog(self, "Open firmware file", style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            # Proceed loading the file chosen by the user
+            self.firmwarePath = fileDialog.GetPath()
+            self.fmpath.SetValue("")  # clear the path display area.
+            self.fmpath.SetValue(self.firmwarePath)
+
+#-----------------------------------------------------------------------------
     def connectToServer(self, event):
-        key = self.serverchoice.GetString(self.serverchoice.GetSelection())
-        ip, port = SERVER_CHOICE[key]
+        """ Connect to the server(ip, port) based on users selection.
+        """
+        ServerName = self.serverchoice.GetString(self.serverchoice.GetSelection())
+        ip, port = SERVER_CHOICE[ServerName]
         try: 
             self.tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.tcpClient.connect((ip, port))
             self.tcpClient.send(b'login')
             data = self.tcpClient.recv(BUFFER_SIZE)            
             if data == b'Done':
-                self.lgLb.SetLabel('Login [ '+ key +' ]')
-                self.userLb.Show()
-                self.userFI.Show()
-                self.pwdLb.Show()
-                self.pwdFI.Show()
-                self.lgBt.Show()
+                self.lgLb.SetLabel('Login [ '+ ServerName +' ]')
+                self.hideWidgets(hide=False)
             else:
                 print("Login fail")
         except:
             print("TCP connection fault")
             self.tcpClient = None
 
-    def loginServ(self, event):
-        if self.tcpClient is None: return 
-        user = self.userFI.GetLineText(0)
-        pwd = self.pwdFI.GetLineText(0)
-        loginStr = ";".join(['L', user, pwd])
-        self.tcpClient.send(loginStr.encode('utf-8'))
-        replay = self.tcpClient.recv(BUFFER_SIZE)
-        if replay == b'Done':
-            self.signBt.Enable(True)
-            self.fetchCert()
-            self.statusbar.SetStatusText("Login suscessful")
-        else:
-            self.signBt.Enable(False)
-            self.statusbar.SetStatusText("UserName or password invalid")
-
-        #self.statusbar.SetStatusText("No response to the server, please reconnect.")
-
+#-----------------------------------------------------------------------------
     def fetchCert(self):
+        """ Send the certificate file fetch request. 
+        """
         self.tcpClient.send(b'Fetch')
-        f = open("firmwSign\\receivered.cer", "wb")
+        f = open(CER_PATH, "wb")
         # here we assument the file not more than 4K 
         data = self.tcpClient.recv(4096)
         f.write(data)
         f.close()
-        print ("got the file")
+        print ("Fetched the certificate file from the server.")
 
+#-----------------------------------------------------------------------------
     def getMD5Hash(self, fname):
+        """ Get the file MD5 hash value. 
+        """ 
         hash_md5 = hashlib.md5()
         with open(fname, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
 
-    def LoadCert(self):
+#-----------------------------------------------------------------------------
+    def hideWidgets(self, hide=False):
+        """ Hide/show the UI Widgets in the hidenWidgetList.
+        """
+        for wideget in self.hidenWidgetList:
+            if hide:
+                wideget.Hide()
+            else:
+                wideget.Show()
+
+#-----------------------------------------------------------------------------
+    def getEncryptedStr(self, dataStr):
+        """ Encrypte the dataString for sending
+        """
+        usePrivateKey = False
+        encryptedStr = self.rsaEncryptor.encryptStringENC(dataStr, usePrivateKey)
+        return encryptedStr
+
+#-----------------------------------------------------------------------------
+    def loadCert(self):
+        """ Load the certificate file and get the public key for signing the firmware. 
+        """ 
         if not os.path.exists(CER_PATH):
             print("The certificate file is not exist")
             return
@@ -185,20 +217,32 @@ class FirmwareSignTool(wx.Frame):
             print(cert.lastErrorText())
             return
         pubKey = cert.ExportPublicKey()
-        #xml = chilkat.CkXml()
-        #xml.LoadXml(pubKey.getXml())
-
         success = self.rsaEncryptor.ImportPublicKey(pubKey.getXml())
 
-    def sendEncryptedStr(self, dataStr):
+#-----------------------------------------------------------------------------
+    def loginServer(self, event):
+        """ Login ther firmware sign server. 
+        """
+        if self.tcpClient is None:
+            return
+        user, pwd = self.userFI.GetLineText(0), self.pwdFI.GetLineText(0)
+        loginStr = ";".join(['L', user, pwd])
+        self.tcpClient.send(loginStr.encode('utf-8'))
+        response = self.tcpClient.recv(BUFFER_SIZE)
+        if response == b'Done':
+            self.signBt.Enable(True)
+            self.fetchCert()
+            self.statusbar.SetStatusText("Login suscessful.")
+        else:
+            self.signBt.Enable(False)
+            self.statusbar.SetStatusText("UserName or password invalid")
 
-        usePrivateKey = False
-        encryptedStr = self.rsaEncryptor.encryptStringENC(dataStr, usePrivateKey)
-        return encryptedStr
-
-    def signFirmware(self, event): 
+#-----------------------------------------------------------------------------
+    def signFirmware(self, event):
+        """ Sign the firmware file and send the data to server. 
+        """
         print("sign the firmware")
-        self.LoadCert()
+        self.loadCert()
         idStr = '202'
         md5str = str(self.getMD5Hash(self.firmwarePath))
         print("firare hash:" + md5str)
@@ -206,13 +250,12 @@ class FirmwareSignTool(wx.Frame):
         dataStr = now.strftime("%d/%m/%Y")
         typeStr = 'XKAK_PPL_COUNT'
         version = '1.01'
-        mapStr = ';'.join([idStr, md5str, dataStr, typeStr, version ])
+        mapStr = ';'.join([idStr, md5str, dataStr, typeStr, version])
         print("This is map string data: " + mapStr)
-        sendStr = self.sendEncryptedStr(mapStr)
+        sendStr = self.getEncryptedStr(mapStr)
         print(sendStr)
-        if self.tcpClient: 
+        if self.tcpClient:
             self.tcpClient.sendall(sendStr.encode('utf-8'))
-
 
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):
