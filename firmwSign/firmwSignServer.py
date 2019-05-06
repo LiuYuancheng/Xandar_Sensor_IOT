@@ -13,6 +13,7 @@
 #-----------------------------------------------------------------------------
 import os
 import sys
+import json
 import socket
 import chilkat
 
@@ -24,8 +25,8 @@ BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
 dirpath = os.getcwd()
 print("current directory is : " + dirpath)
 
-CERT_PATH = "".join([dirpath, "\\firmwSign\\publickey.cer"])
-PRI_PATH = "".join( [dirpath, "\\firmwSign\\privatekey.pem"])
+CERT_PATH = "".join([dirpath, "\\publickey.cer"])
+PRI_PATH = "".join( [dirpath, "\\privatekey.pem"])
 ENCODE_MODE = 'hex'
 # create the decoder
 
@@ -113,7 +114,8 @@ class FirmwServ(object):
                             print("decode the input string")
                             usePrivateKey = True
                             decryptedStr = self.rsaDecryptor.decryptStringENC(encryptedStr,usePrivateKey)
-                            print("Decripted message: \n" + decryptedStr)
+                            data = json.loads(decryptedStr)
+                            print("Decripted message: \n" + str(data))
 
             except:
                 continue
