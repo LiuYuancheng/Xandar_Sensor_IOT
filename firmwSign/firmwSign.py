@@ -16,6 +16,7 @@ import os
 import wx # use wx to build the UI.
 import sys
 import time
+import json
 import socket
 import hashlib
 import chilkat # need to pip install this lib.
@@ -24,7 +25,7 @@ from functools import partial
 from datetime import datetime
 # Server ip list:
 SERVER_CHOICE = {
-    "LocalDefault [127.0.0.1]"    : ('127.0.0.1', 5005),
+    "LocalDefault [127.0.0.1]"  : ('127.0.0.1', 5005),
     "Server_1 [192.168.0.100]"  : ('192.168.0.100', 5005),
     "Server_2 [192.168.0.101]"  : ('192.168.0.101', 5005)
 }
@@ -50,7 +51,8 @@ class FirmwareSignTool(wx.Frame):
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         # init parameter here:
         self.tcpClient = None
-        self.saveCert = False
+        self.saveCert = True
+        self.bIOhandler = None
         # Create the RSA encrypter
         self.rsaEncryptor = chilkat.CkRsa()
         if not self.rsaEncryptor.UnlockComponent("Anything for 30-day trial"):
@@ -174,12 +176,21 @@ class FirmwareSignTool(wx.Frame):
         """ Send the certificate file fetch request. 
         """
         self.tcpClient.send(b'Fetch')
-        f = open(CER_PATH, "wb")
-        # here we assument the file not more than 4K 
-        data = self.tcpClient.recv(4096)
-        f.write(data)
-        f.close()
-        print ("Fetched the certificate file from the server.")
+
+        if self.saveCert:
+            f = open(CER_PATH, "wb")
+            # here we assument the file not more than 4K 
+            data = self.tcpClient.recv(4096)
+            f.write(data)
+            f.close()
+        else:
+            data = self.tcpClient.recv(4096)
+            
+            self.bIOhandler = chilkat.CkBinData()
+            for b in data:
+                self.bIOhandler.AppendByte(b)
+            #self.bIOhandler.write(data)
+            print ("Fetched the certificate file from the server.")
 
 #-----------------------------------------------------------------------------
     def getMD5Hash(self, fname):
@@ -213,11 +224,15 @@ class FirmwareSignTool(wx.Frame):
     def loadCert(self):
         """ Load the certificate file and get the public key for signing the firmware. 
         """ 
-        if not os.path.exists(CER_PATH):
+        
+        if self.saveCert and not os.path.exists(CER_PATH):
             print("The certificate file is not exist")
             return
         cert = chilkat.CkCert()
-        success = cert.LoadFromFile(CER_PATH)
+        if self.saveCert:
+            success = cert.LoadFromFile(CER_PATH)
+        else:
+            success = cert.LoadFromBd(self.bIOhandler)
         if not success:
             print(cert.lastErrorText())
             return
@@ -248,14 +263,14 @@ class FirmwareSignTool(wx.Frame):
         """
         print("sign the firmware")
         self.loadCert()
-        idStr = '202'
-        md5str = str(self.getMD5Hash(self.firmwarePath))
-        print("firare hash:" + md5str)
-        now = datetime.now()
-        dataStr = now.strftime("%d/%m/%Y")
-        typeStr = 'XKAK_PPL_COUNT'
-        version = '1.01'
-        mapStr = ';'.join([idStr, md5str, dataStr, typeStr, version])
+        dataDict = {
+            'id':'202',
+            'hash': str(self.getMD5Hash(self.firmwarePath)),
+            'date': str(datetime.now().strftime("%d/%m/%Y")),
+            'tpye': 'XKAK_PPL_COUNT',
+            'version': '1.01'
+        }
+        mapStr = json.dumps(dataDict)
         print("This is map string data: " + mapStr)
         sendStr = self.getEncryptedStr(mapStr)
         print(sendStr)
