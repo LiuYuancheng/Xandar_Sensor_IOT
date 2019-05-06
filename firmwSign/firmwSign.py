@@ -19,6 +19,7 @@ import time
 import socket
 import hashlib
 import chilkat # need to pip install this lib.
+from io import BytesIO
 from functools import partial
 from datetime import datetime
 # Server ip list:
@@ -31,8 +32,12 @@ SERVER_CHOICE = {
 BUFFER_SIZE = 1024
 SENSOR_ID = '100'
 ENCODE_MODE = 'hex'
-CER_PATH = "C:\\Project\\testProgram\\IOT\\IOT\\firmwSign\\receivered.cer"
-DEFUALT_FW= "C:\\Project\\testProgram\IOT\IOT\\firmwSign\\firmwareSample"
+
+dirpath = os.getcwd()
+print("current directory is : " + dirpath)
+
+CER_PATH = "".join([dirpath, "\\firmwSign\\receivered.cer"])
+DEFUALT_FW= "".join([dirpath, "\\firmwSign\\firmwareSample"])
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -45,7 +50,7 @@ class FirmwareSignTool(wx.Frame):
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         # init parameter here:
         self.tcpClient = None
-
+        self.saveCert = False
         # Create the RSA encrypter
         self.rsaEncryptor = chilkat.CkRsa()
         if not self.rsaEncryptor.UnlockComponent("Anything for 30-day trial"):

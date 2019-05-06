@@ -11,6 +11,7 @@
 # Copyright:   YC
 # License:     YC
 #-----------------------------------------------------------------------------
+import os
 import sys
 import socket
 import chilkat
@@ -19,8 +20,12 @@ TCP_IP = '127.0.0.1'
 TCP_PORT = 5005
 BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
 
-CERT_PATH = "C:\\Project\\testProgram\\IOT\\IOT\\firmwSign\\publickey.cer"
-PRI_PATH = "C:\\Project\\testProgram\\IOT\\IOT\\firmwSign\\privatekey.pem"
+
+dirpath = os.getcwd()
+print("current directory is : " + dirpath)
+
+CERT_PATH = "".join([dirpath, "\\firmwSign\\publickey.cer"])
+PRI_PATH = "".join( [dirpath, "\\firmwSign\\privatekey.pem"])
 ENCODE_MODE = 'hex'
 # create the decoder
 
