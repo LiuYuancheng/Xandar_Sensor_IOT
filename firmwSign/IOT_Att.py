@@ -10,10 +10,9 @@
 # Copyright:
 # License:
 # -----------------------------------------------------------------------------
-
+import os
 import random
 import string
-import os
 import mimetypes
 from uuid import getnode as get_mac
 

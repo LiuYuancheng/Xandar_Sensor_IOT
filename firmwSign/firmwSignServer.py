@@ -44,6 +44,7 @@ class FirmwServ(object):
         self.rsaDecryptor = self.initDecoder(Mode='RSA')
         self.tcpServer = self.initTCPServ()
         self.swattHd =  SWATT.swattCal()
+        self.responseEpc = None # expect response of the firmware file.
 
     def initDecoder(self, Mode=None):
         """ init the message decoder. 
@@ -108,9 +109,10 @@ class FirmwServ(object):
                     data = conn.recv(BUFFER_SIZE)
                     if not data: break # get the ending message. 
                     print("received data:"+str(data))
-                    # Handle the client request.
+                    # Handle the login request.
                     if data == b'login':
                         conn.send(b'Done')
+                    # Handle the certificate fetch request.
                     elif data == b'Fetch':
                         f_send = "publickey.cer"
                         with open(f_send, "rb") as f:
@@ -118,21 +120,21 @@ class FirmwServ(object):
                             conn.sendall(data)
                     else:
                         dataStr= data.decode('utf-8')
+                        # Handle the username and password.
                         if dataStr[:2] == 'L;':
                             args =  dataStr.split(';')
                             tag = args[0]
                             if tag == 'L':
                                 if self.checkLogin(args[1], args[2]):
                                     # send the cer file for sign the file:
-                                    print("xxxxxxx")
                                     chaStr = self.randomChallStr(stringLength=10)
                                     print("This is the challenge: %s" %chaStr)
-                                    response = self.swattHd.getSWATT(chaStr, 300, DEFUALT_FW)
-                                    print("This is the swatt: %s" %str(response))
-
+                                    self.responseEpc = self.swattHd.getSWATT(chaStr, 300, DEFUALT_FW)
+                                    print("This is the swatt: %s" %str(self.responseEpc))
                                     conn.send(str(chaStr).encode('utf-8'))
                                 else:
                                     conn.send(b'Fail')
+                        # Handle the signed message.
                         else:
                             encryptedStr = dataStr
                             print("decode the input string")
@@ -140,6 +142,8 @@ class FirmwServ(object):
                             decryptedStr = self.rsaDecryptor.decryptStringENC(encryptedStr,usePrivateKey)
                             data = json.loads(decryptedStr)
                             print("Decripted message: \n" + str(data))
+                            if data['swatt'] == self.responseEpc:
+                                print("The firmware is signed successfully")
 
             except:
                 continue
