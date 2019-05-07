@@ -27,9 +27,10 @@ print("current directory is : " + dirpath)
 
 CERT_PATH = "".join([dirpath, "\\publickey.cer"])
 PRI_PATH = "".join( [dirpath, "\\privatekey.pem"])
-ENCODE_MODE = 'hex'
-# create the decoder
+ENCODE_MODE = 'base64' # or 'hex'
 
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 class FirmwServ(object):
     
     def __init__(self):
@@ -38,6 +39,8 @@ class FirmwServ(object):
         self.tcpServer = self.initTCPServ()
 
     def initDecoder(self, Mode=None):
+        """ init the message decoder. 
+        """
         if not Mode:
             print("Decode mode missing.")
             return None
@@ -45,21 +48,22 @@ class FirmwServ(object):
             rsaDecryptor = chilkat.CkRsa()
             if not rsaDecryptor.UnlockComponent("Anything for 30-day trial"):
                 print("RSA component unlock failed")
-                sys.exit()
+                return None
             privKey = chilkat.CkPrivateKey()
             success = privKey.LoadPemFile(PRI_PATH)
             if not success:
                 print(privKey.lastErrorText())
-                sys.exit()
+                return None
             print("Private Key from DER: \n" + privKey.getXml())
             rsaDecryptor.put_EncodingMode(ENCODE_MODE)
             # import private key
             success = rsaDecryptor.ImportPrivateKey(privKey.getXml())
             if not success:
                 print(rsaDecryptor.lastErrorText())
-                sys.exit()
+                return None
             return rsaDecryptor
 
+#-----------------------------------------------------------------------------
     def initTCPServ(self): 
         """ Init the tcp server.
         """
@@ -73,10 +77,11 @@ class FirmwServ(object):
             print("TCP socket init error")
             raise
 
+#-----------------------------------------------------------------------------
     def checkLogin(self, userName, password):
         return userName == '123' and password == '123'
 
-
+#-----------------------------------------------------------------------------
     def startServer(self):
 
         terminate = False
@@ -120,7 +125,7 @@ class FirmwServ(object):
             except:
                 continue
 
-
+#-----------------------------------------------------------------------------
 def startServ():
     server = FirmwServ()
     print("Server inited.")
