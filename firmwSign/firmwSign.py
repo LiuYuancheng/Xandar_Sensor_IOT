@@ -55,6 +55,8 @@ class FirmwareSignTool(wx.Frame):
         self.tcpClient = None
         self.saveCert = True
         self.bIOhandler = None
+        self.swattHd =  SWATT.swattCal()
+        self.swattChaStr = 'default'
         # Create the RSA encrypter
         self.rsaEncryptor = chilkat.CkRsa()
         if not self.rsaEncryptor.UnlockComponent("Anything for 30-day trial"):
@@ -207,10 +209,9 @@ class FirmwareSignTool(wx.Frame):
         """ Get the file SWATT hash
         """
         iter_count = 300
-        cr_pair = "qwsadfasdfadfasdf"
-        response=SWATT.IOT_ATT(cr_pair,iter_count, fname)
+        response = self.swattHd.getSWATT(self.swattChaStr, iter_count, fname)
         print(response)
-
+        return response
 
 #-----------------------------------------------------------------------------
     def hideWidgets(self, hide=False):
@@ -259,10 +260,11 @@ class FirmwareSignTool(wx.Frame):
         loginStr = ";".join(['L', user, pwd])
         self.tcpClient.send(loginStr.encode('utf-8'))
         response = self.tcpClient.recv(BUFFER_SIZE)
-        if response == b'Done':
+        if response != b'Fail':
             self.signBt.Enable(True)
+            self.swattChaStr = response.decode('utf-8')
             self.fetchCert()
-            self.statusbar.SetStatusText("Login suscessful.")
+            self.statusbar.SetStatusText("Login and fetch sertificate suscessful.")
         else:
             self.signBt.Enable(False)
             self.statusbar.SetStatusText("UserName or password invalid")
@@ -275,17 +277,18 @@ class FirmwareSignTool(wx.Frame):
         self.loadCert()
         dataDict = {
             'id'    : '202',
-            'hash'  : str(self.getMD5Hash(self.firmwarePath)),
-            'date'  : str(datetime.now().strftime("%d/%m/%Y")),
+            'swatt'  : self.getSWATThash(self.firmwarePath),
+            #'date'  : str(datetime.now().strftime("%d/%m/%Y")),
+            'date'  : str(datetime.now()),
             'tpye'  : 'XKAK_PPL_COUNT',
             'version': '1.01'
         }
-        #print("=========%s" %self.getSWATThash("C:\Singtel\Programs\IOT\IOT\IOT\firmwSign\node\IOT_AUTT-INTEGRATION\MAX"))
-        print("=========%s" %self.getSWATThash(self.firmwarePath))
+        #print("=========%s" %self.getSWATThash("C:\\Singtel\\Programs\\IOT\\IOT\\IOT\\firmwSign\\XK_ZonePeopleCounting_V_3_0_15_FirmwareUpgrade_Singtel.exe"))
+        #print("=========%s" %str(self.getSWATThash(self.firmwarePath)))
         mapStr = json.dumps(dataDict)
         print("This is map string data: " + mapStr)
         sendStr = self.getEncryptedStr(mapStr)
-        print(sendStr)
+        #print(sendStr)
         if self.tcpClient:
             self.tcpClient.sendall(sendStr.encode('utf-8'))
 

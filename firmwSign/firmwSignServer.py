@@ -14,8 +14,11 @@
 import os
 import sys
 import json
+import random
+import string
 import socket
 import chilkat
+import IOT_Att as SWATT
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 5005
@@ -27,6 +30,9 @@ print("current directory is : " + dirpath)
 
 CERT_PATH = "".join([dirpath, "\\publickey.cer"])
 PRI_PATH = "".join( [dirpath, "\\privatekey.pem"])
+DEFUALT_FW= "".join([dirpath, "\\firmwareSample"])
+
+
 ENCODE_MODE = 'base64' # or 'hex'
 
 #-----------------------------------------------------------------------------
@@ -37,6 +43,7 @@ class FirmwServ(object):
 
         self.rsaDecryptor = self.initDecoder(Mode='RSA')
         self.tcpServer = self.initTCPServ()
+        self.swattHd =  SWATT.swattCal()
 
     def initDecoder(self, Mode=None):
         """ init the message decoder. 
@@ -78,6 +85,12 @@ class FirmwServ(object):
             raise
 
 #-----------------------------------------------------------------------------
+    def randomChallStr(self, stringLength=10):
+        """Generate a random chanllenge string of fixed length """
+        letters = string.ascii_lowercase
+        return ''.join(random.choice(letters) for i in range(stringLength))
+
+#-----------------------------------------------------------------------------
     def checkLogin(self, userName, password):
         return userName == '123' and password == '123'
 
@@ -110,8 +123,14 @@ class FirmwServ(object):
                             tag = args[0]
                             if tag == 'L':
                                 if self.checkLogin(args[1], args[2]):
-                                    # send the cer file for sign the file: 
-                                    conn.send(b'Done')
+                                    # send the cer file for sign the file:
+                                    print("xxxxxxx")
+                                    chaStr = self.randomChallStr(stringLength=10)
+                                    print("This is the challenge: %s" %chaStr)
+                                    response = self.swattHd.getSWATT(chaStr, 300, DEFUALT_FW)
+                                    print("This is the swatt: %s" %str(response))
+
+                                    conn.send(str(chaStr).encode('utf-8'))
                                 else:
                                     conn.send(b'Fail')
                         else:
