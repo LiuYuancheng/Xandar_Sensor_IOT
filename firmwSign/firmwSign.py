@@ -23,7 +23,9 @@ import chilkat # need to pip install this lib.
 from io import BytesIO
 from functools import partial
 from datetime import datetime
-# Server ip list:
+import IOT_Att as SWATT
+
+# TCP Server ip + port list:
 SERVER_CHOICE = {
     "LocalDefault [127.0.0.1]"  : ('127.0.0.1', 5005),
     "Server_1 [192.168.0.100]"  : ('192.168.0.100', 5005),
@@ -32,7 +34,7 @@ SERVER_CHOICE = {
 # 
 BUFFER_SIZE = 1024
 SENSOR_ID = '100'
-ENCODE_MODE = 'hex'
+ENCODE_MODE = 'base64'
 
 dirpath = os.getcwd()
 print("current directory is : " + dirpath)
@@ -185,12 +187,11 @@ class FirmwareSignTool(wx.Frame):
             f.close()
         else:
             data = self.tcpClient.recv(4096)
-            
             self.bIOhandler = chilkat.CkBinData()
             for b in data:
                 self.bIOhandler.AppendByte(b)
             #self.bIOhandler.write(data)
-            print ("Fetched the certificate file from the server.")
+        print ("Fetched the certificate file from the server.")
 
 #-----------------------------------------------------------------------------
     def getMD5Hash(self, fname):
@@ -201,6 +202,15 @@ class FirmwareSignTool(wx.Frame):
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
+#-----------------------------------------------------------------------------
+    def getSWATThash(self, fname):
+        """ Get the file SWATT hash
+        """
+        iter_count = 300
+        cr_pair = "qwsadfasdfadfasdf"
+        response=SWATT.IOT_ATT(cr_pair,iter_count, fname)
+        print(response)
+
 
 #-----------------------------------------------------------------------------
     def hideWidgets(self, hide=False):
@@ -264,12 +274,14 @@ class FirmwareSignTool(wx.Frame):
         print("sign the firmware")
         self.loadCert()
         dataDict = {
-            'id':'202',
-            'hash': str(self.getMD5Hash(self.firmwarePath)),
-            'date': str(datetime.now().strftime("%d/%m/%Y")),
-            'tpye': 'XKAK_PPL_COUNT',
+            'id'    : '202',
+            'hash'  : str(self.getMD5Hash(self.firmwarePath)),
+            'date'  : str(datetime.now().strftime("%d/%m/%Y")),
+            'tpye'  : 'XKAK_PPL_COUNT',
             'version': '1.01'
         }
+        #print("=========%s" %self.getSWATThash("C:\Singtel\Programs\IOT\IOT\IOT\firmwSign\node\IOT_AUTT-INTEGRATION\MAX"))
+        print("=========%s" %self.getSWATThash(self.firmwarePath))
         mapStr = json.dumps(dataDict)
         print("This is map string data: " + mapStr)
         sendStr = self.getEncryptedStr(mapStr)
