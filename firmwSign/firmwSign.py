@@ -21,11 +21,13 @@ import time
 import json
 import socket
 import hashlib
+import platform
 import chilkat # need to pip install this lib.
 from functools import partial
 from datetime import datetime
 import IOT_Att as SWATT
 
+pyVersionStr = str(platform.python_version())
 # TCP Server ip + port list:
 SERVER_CHOICE = {
     "LocalDefault [127.0.0.1]"  : ('127.0.0.1', 5005),
@@ -44,7 +46,6 @@ print("Current working directory is : %s" %dirpath)
 
 CER_PATH = "".join([dirpath, "\\firmwSign\\receivered.cer"])
 DEFUALT_FW = "".join([dirpath, "\\firmwSign\\firmwareSample"])
-
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
