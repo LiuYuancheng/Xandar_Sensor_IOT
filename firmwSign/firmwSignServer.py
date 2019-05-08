@@ -19,6 +19,7 @@ import string
 import socket
 import chilkat
 import IOT_Att as SWATT
+import firmwDBMgr as DataBase
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 5005
@@ -44,7 +45,9 @@ class FirmwServ(object):
         self.rsaDecryptor = self.initDecoder(Mode='RSA')
         self.tcpServer = self.initTCPServ()
         self.swattHd =  SWATT.swattCal()
+        self.ranStr = ""
         self.responseEpc = None # expect response of the firmware file.
+        self.dbMgr = DataBase.firmwDBMgr()
 
     def initDecoder(self, Mode=None):
         """ init the message decoder. 
@@ -127,11 +130,11 @@ class FirmwServ(object):
                             if tag == 'L':
                                 if self.checkLogin(args[1], args[2]):
                                     # send the cer file for sign the file:
-                                    chaStr = self.randomChallStr(stringLength=10)
-                                    print("This is the challenge: %s" %chaStr)
-                                    self.responseEpc = self.swattHd.getSWATT(chaStr, 300, DEFUALT_FW)
+                                    self.ranStr = self.randomChallStr(stringLength=10)
+                                    print("This is the challenge: %s" %self.ranStr)
+                                    self.responseEpc = self.swattHd.getSWATT(self.ranStr, 300, DEFUALT_FW)
                                     print("This is the swatt: %s" %str(self.responseEpc))
-                                    conn.send(str(chaStr).encode('utf-8'))
+                                    conn.send(str(self.ranStr).encode('utf-8'))
                                 else:
                                     conn.send(b'Fail')
                         # Handle the signed message.
@@ -144,6 +147,8 @@ class FirmwServ(object):
                             print("Decripted message: \n" + str(data))
                             if data['swatt'] == self.responseEpc:
                                 print("The firmware is signed successfully")
+                                rcdList = (int(data['id']), self.ranStr, str(data['swatt']),data['date'], data['tpye'], data['version'])
+                                self.dbMgr.createFmSignRcd(rcdList)
 
             except:
                 continue
