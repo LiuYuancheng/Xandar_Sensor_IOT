@@ -11,12 +11,14 @@
 #-----------------------------------------------------------------------------
 
 import os
+import hashlib
 import sqlite3
 from sqlite3 import Error
 
 dirpath = os.getcwd()
 #DB_PATH = "".join([dirpath, "\\firmwSign\\firmwDB.db"])
 DB_PATH = "".join([dirpath, "\\firmwDB.db"])
+DE_USER = ("admin", '123') # defualt user.
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -27,8 +29,10 @@ class firmwDBMgr(object):
         """ Check whether the data base has been created and connect to DB+table if needed.
         """
         self.sql_firwareInfo_table = None
+        self.sql_user_table = None
         if not os.path.exists(DB_PATH):
             print("Data base file is missing, create new data base file")
+            # Table to save the data.
             self.sql_firwareInfo_table = """CREATE TABLE IF NOT EXISTS firmwareInfo (
                                 id integer PRIMARY KEY,
                                 sensorID integer NOT NULL,
@@ -39,18 +43,71 @@ class firmwDBMgr(object):
                                 version text NOT NULL
                             );"""
 
+            self.sql_user_table = """ CREATE TABLE IF NOT EXISTS userInFo(
+                                user text PRIMARY KEY,
+                                pwdHash text NOT NULL
+                            );"""
+
         self.conn = self.createConnection(DB_PATH)
         # create the table if the BD is first time created one.
         if self.sql_firwareInfo_table and self.conn:
-            self.createTable(self.conn, self.sql_firwareInfo_table)
+            self.createTable(self.sql_firwareInfo_table)
+            self.createTable(self.sql_user_table)
+            # Add default user if needed.
+            self.addUser(DE_USER)
+        self.addUser(('123','123'))
+        print ( self.authorizeUser('123','123'))
+#-----------------------------------------------------------------------------
+
+    def addUser(self, args):
+        """ Add a not exist user and password in the DB.
+        """
+        user, pwd = args
+        pwdhash = hashlib.md5(str(pwd).encode('utf-8')).hexdigest()
+        # Check wether user in the DB already:
+        selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
+        with self.conn:
+            cur = self.conn.cursor()
+            cur.execute(selectSQL, (str(user),))
+            rows = cur.fetchall()
+            if len(rows):
+                print("The user %s is exists" % str(user))
+                return False
+
+        print("Add user %s in to the data base" % str(user))
+        sql = ''' INSERT INTO userInFo(user, pwdHash)
+                VALUES(?,?) '''
+        with self.conn:
+            cur = self.conn.cursor()
+            cur.execute(sql, (str(user), str(pwdhash)))
+        return True
 
 #-----------------------------------------------------------------------------
-    def createTable(self, conn, create_table_sql):
+    def authorizeUser(self, user, pwd):
+        """ Authorize user and password 
+        """
+        pwdhash = hashlib.md5(str(pwd).encode('utf-8')).hexdigest()
+        # Check wether user in the DB already:
+        selectSQL = '''SELECT pwdHash FROM userInFo WHERE user=?'''
+        with self.conn:
+            cur = self.conn.cursor()
+            cur.execute(selectSQL, (str(user),))
+            rows = cur.fetchall()
+            if len(rows) == 0:
+                return False
+            for row in rows:
+                if row[0] == pwdhash:
+                    return True
+            return False
+
+#-----------------------------------------------------------------------------
+    def createTable(self, create_table_sql):
         """ Create a table
         """
         try:
-            c = conn.cursor()
-            c.execute(create_table_sql)
+            with self.conn:
+                cursor = self.conn.cursor()
+                cursor.execute(create_table_sql)
         except Error as e:
             print(e)
 
@@ -76,7 +133,7 @@ class firmwDBMgr(object):
             cur.execute(sql, rcdArgs)
             print("This is the cursir UD: %s" %str(cur.lastrowid))
             return cur.lastrowid
-
+   
 #-----------------------------------------------------------------------------
     def updateRecd(self,rcd):
         sql = ''' UPDATE firmwareInfo

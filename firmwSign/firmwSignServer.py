@@ -96,7 +96,7 @@ class FirmwServ(object):
 
 #-----------------------------------------------------------------------------
     def checkLogin(self, userName, password):
-        return userName == '123' and password == '123'
+        return self.dbMgr.authorizeUser(userName, password)
 
 #-----------------------------------------------------------------------------
     def startServer(self):
