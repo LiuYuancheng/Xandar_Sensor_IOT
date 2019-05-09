@@ -100,6 +100,20 @@ class firmwDBMgr(object):
                     return True
             return False
 
+    def checkUser(self, userName):
+        """ Check whehter the user is in the data base.
+        """
+        selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
+        with self.conn:
+            cur = self.conn.cursor()
+            cur.execute(selectSQL, (str(userName),))
+            rows = cur.fetchall()
+            if len(rows):
+                print("The user %s is exists" % str(userName))
+                return True
+        return False
+
+
 #-----------------------------------------------------------------------------
     def createTable(self, create_table_sql):
         """ Create a table
