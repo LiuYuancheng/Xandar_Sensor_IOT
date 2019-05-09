@@ -47,17 +47,47 @@ class msgTrans(object):
         data = json.dumps(msgDict).encode('utf-8')
         return tag + data
 
-    def createLImsg(self, args):
+    def createLImsg(self, args = None):
         if len(args) == 1:
             (userName) = args
             randomB = os.urandom(RAN_LEN)
             msgDict = {
-            "act"       : 'LI1',
-            "user"      : str(userName),
-            "random1"   : randomB.hex() 
-        }
-        data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
-        return (data, randomB)
+                "act"       : 'LI1',
+                "user"      : str(userName),
+                "random1"   : randomB.hex() 
+            }
+            data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+            return (data, randomB)
+        elif len(args) == 2:
+            (randomB, password) = args
+            msgDict = {
+                "act"       : 'LI2',
+                "random2"   : randomB,
+                "random1"   : password 
+            }
+            data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+            return data
+
+    def createLRmsg(self, args = None):
+        if len(args) == 1:
+            (liStatus) = args
+            msgDict = {
+                "act"       : 'LR2',
+                "state"      : liStatus,
+            }
+            data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+            return data
+        elif len(args) == 2:
+            (randomB, state) = args
+            randomB2 = os.urandom(RAN_LEN)
+            msgDict = {
+                "act"       : 'LR1',
+                "state"     : state,
+                "random1"   : randomB,
+                "random2"   : randomB2.hex() 
+            }
+            data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+            return (data, randomB2)
 
     def loadMsg(self, msg):
         tag = msg[0:1]
