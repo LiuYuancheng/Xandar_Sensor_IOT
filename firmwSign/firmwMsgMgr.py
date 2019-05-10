@@ -1,14 +1,25 @@
+#-----------------------------------------------------------------------------
+# Name:        firmwMsgMgr.py
+#
+# Purpose:     This module is used create a message manager to dump the user 
+#              message to a json and Bytes data. 
+# Author:      Yuancheng Liu
+#
+# Created:     2019/05/09
+# Copyright:   YC
+# License:     YC
+#-----------------------------------------------------------------------------
 import os
 import json
 import time
 
-CMD_TYPE = 'C'.encode('utf-8')
-FILE_TYPE = 'F'.encode('utf-8')
+CMD_TYPE = 'C'.encode('utf-8')  # cmd type message used for contorl.  
+FILE_TYPE = 'F'.encode('utf-8') # file(bytes) type.
 RAN_LEN = 4
 
 # Action type:
 # CR    - Connection request
-# HB     - Heart beat
+# HB    - Heart beat (feedback)
 # LI1   - Login step1
 # LR1   - Login response 1
 # LI2   - login step2
@@ -21,6 +32,7 @@ RAN_LEN = 4
 class msgMgr(object):
     
     def __init__(self, parent):
+        self.parent = parent
         self.data = None
 
     def dumpMsg(self, action=None, dataArgs=None):
@@ -118,10 +130,11 @@ class msgMgr(object):
         return tag + data
 
     def createSRmsg(self, args):
-        sensorId, swatt , date, typeS, versionS, signS = args
+        sensorId, signerId,swatt , date, typeS, versionS, signS = args
         msgDict = {
             "act"   : 'SR',
-            "id"    : sensorId, 
+            "id"    : sensorId,
+            "sid"   : signerId,
             "swatt" : swatt,
             "date"  : date,
             "tpye"  : typeS,
@@ -145,8 +158,10 @@ class msgMgr(object):
             data = msg[1:]
             return data
 
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 def testCase():
-    testMsgr = msgTrans()
+    testMsgr = msgMgr(None)
     print("Start the message process test:")
     print("Connection request test:")
     msgkey = ("act", "time")

@@ -35,7 +35,7 @@ CERT_PATH = "".join([dirpath, "\\publickey.cer"])
 PRI_PATH = "".join( [dirpath, "\\privatekey.pem"])
 DEFUALT_FW= "".join([dirpath, "\\firmwareSample"])
 
-# SignCert
+# SHA-256 sign used
 SCERT_PATH = "".join([dirpath, "\\certificate.pem"])
 SPRIV_PATH = "".join([dirpath, "\\private_key.pem"])
 
@@ -163,6 +163,7 @@ class FirmwServ(object):
 
     def handleSignResp(self, sender, dataDict):
         checkStr = ''.join([str(dataDict['id']), 
+                            str(dataDict['sid']), 
                             str(dataDict['swatt']),
                             str(dataDict['date']),
                             str(dataDict['tpye']),
@@ -181,7 +182,7 @@ class FirmwServ(object):
         self.responseEpc = self.swattHd.getSWATT(self.ranStr, 300, DEFUALT_FW)
         if dataDict['swatt'] == self.responseEpc:
             print("The firmware is signed successfully")
-            rcdList = (int(dataDict['id']), self.ranStr, str(dataDict['swatt']),
+            rcdList = (int(dataDict['id']), int(dataDict['sid']), self.ranStr, str(dataDict['swatt']),
              dataDict['date'], dataDict['tpye'], dataDict['version'], SCERT_PATH, dataDict['signStr'])
             self.dbMgr.createFmSignRcd(rcdList)
             reply = self.msgMgr.dumpMsg(action='HB',dataArgs=('SR', 1))

@@ -38,7 +38,8 @@ SERVER_CHOICE = {
 }
 # 
 BUFFER_SIZE = 1024  # TCP buffer size.
-SENSOR_ID   = '100' 
+SENSOR_ID   = 100 
+SIGNER_ID   = 200
 ENCODE_MODE = 'base64'
 RSA_UNLOCK = "Anything for 30-day trial"
 SWATT_ITER = 300 # Swatt calculation iteration count.
@@ -48,7 +49,7 @@ dirpath = os.getcwd()
 print("Current working directory is : %s" %dirpath)
 
 CER_PATH = "".join([dirpath, "\\firmwSign\\receivered.cer"])
-SCER_PATH = "".join([dirpath, "\\firmwSign\\receivered.pem"])
+SCER_PATH = "".join([dirpath, "\\firmwSign\\receivered.pem"]) # Certificate path userd to sign the data. 
 DEFUALT_FW = "".join([dirpath, "\\firmwSign\\firmwareSample"])
 
 #-----------------------------------------------------------------------------
@@ -310,18 +311,16 @@ class FirmwareSignTool(wx.Frame):
         #self.loadCert()
         self.loadPrivateK()
         sensor_id = str(SENSOR_ID)
+        signer_id = str(SIGNER_ID)
         swatt_str = self.getSWATThash(self.firmwarePath)
         date_str = str(datetime.now())
         sensor_type = 'XKAK_PPL_COUNT'
         version = '1.01'
-        combinStr = ''.join([sensor_id, swatt_str, date_str, sensor_type, version])
+        combinStr = ''.join([sensor_id, signer_id,swatt_str, date_str, sensor_type, version])
         #signature = self.getEncryptedStr(combinStr)
         signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
-        datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, swatt_str, date_str, sensor_type, version, signature))
+        datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, SIGNER_ID,swatt_str, date_str, sensor_type, version, signature))
         self.tcpClient.send(datab)
-        print("xxxxxxxxxxx")
-
-
         response = self.tcpClient.recv(BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB' and dataDict['lAct']:

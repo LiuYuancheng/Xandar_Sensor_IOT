@@ -37,6 +37,7 @@ class firmwDBMgr(object):
             self.sql_firwareInfo_table = """CREATE TABLE IF NOT EXISTS firmwareInfo (
                                 id integer PRIMARY KEY,
                                 sensorID integer NOT NULL,
+                                signerID integer NOT NULL,
                                 challenge text NOT NULL,
                                 swatt text NOT NULL,
                                 date text NOT NULL,
@@ -142,11 +143,11 @@ class firmwDBMgr(object):
 
 #-----------------------------------------------------------------------------
     def createFmSignRcd(self, rcdArgs):
-        if len(rcdArgs) != 8: 
+        if len(rcdArgs) != 9: 
             print("The firmware sign inforamtion <%s> element missing." %str(rcdArgs))
 
-        sql = ''' INSERT INTO firmwareInfo( sensorID, challenge, swatt, date, type, version, certPath, signature)
-                VALUES(?,?,?,?,?,?,?,?) '''
+        sql = ''' INSERT INTO firmwareInfo( sensorID, signerID,challenge, swatt, date, type, version, certPath, signature)
+                VALUES(?,?,?,?,?,?,?,?,?) '''
         #rcdArgs = ( 203, 'default challenge', '0x1245', '2015-01-01', 'XKAK_PPL_COUNT', '1.01')
         with self.conn:
             cur = self.conn.cursor()
