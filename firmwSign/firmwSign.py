@@ -26,6 +26,8 @@ import chilkat # need to pip install this lib.
 from functools import partial
 from datetime import datetime
 import IOT_Att as SWATT
+import firmwMsgMgr
+
 
 pyVersionStr = str(platform.python_version())
 # TCP Server ip + port list:
@@ -40,6 +42,7 @@ SENSOR_ID   = '100'
 ENCODE_MODE = 'base64'
 RSA_UNLOCK = "Anything for 30-day trial"
 SWATT_ITER = 300 # Swatt calculation iteration count.
+RAN_LEN = 4 # random byte length
 
 dirpath = os.getcwd()
 print("Current working directory is : %s" %dirpath)
@@ -57,8 +60,12 @@ class FirmwareSignTool(wx.Frame):
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         # init parameter here:
         self.tcpClient = None
+        self.msgMgr= firmwMsgMgr.msgMgr(self) # create the message manager.
         self.saveCert = True # flag to specify wehter we save certificate in local.
         self.bIOhandler = None
+        self.ownRandom = None
+        self.serRandom = None
+
         self.swattHd = SWATT.swattCal()
         self.swattChaStr = 'Default Challenge String'
         # Create the RSA encrypter
@@ -159,18 +166,25 @@ class FirmwareSignTool(wx.Frame):
 #-----------------------------------------------------------------------------
     def connectToServer(self, event):
         """ Connect to the server(ip, port) based on users selection. """
-        ServerName = self.serverchoice.GetString(self.serverchoice.GetSelection())
+        ServerName = self.serverchoice.GetString(
+            self.serverchoice.GetSelection())
         ip, port = SERVER_CHOICE[ServerName]
-        try: 
+        try:
             self.tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.tcpClient.connect((ip, port))
-            self.tcpClient.send(b'login')
-            data = self.tcpClient.recv(BUFFER_SIZE)            
-            if data == b'Done':
-                self.lgLb.SetLabel('Login [ '+ ServerName +' ]')
-                self.hideWidgets(hide=False)
+            connectRequest = self.msgMgr.dumpMsg(action='CR')
+            self.tcpClient.send(connectRequest)
+            response = self.tcpClient.recv(BUFFER_SIZE)
+            dataDict = self.msgMgr.loadMsg(response)
+            if dataDict['act'] == 'HB' and dataDict['lAct'] == 'CR':
+                if dataDict['state']:
+                    self.lgLb.SetLabel('Login [  %s  ]' % str(ServerName))
+                    self.hideWidgets(hide=False)
+                    self.SetStatusText("Connection: connected")
+                else:
+                    print("Connection: connection deny")
             else:
-                print("Login fail")
+                print("Connection: connect fail")
         except:
             print("TCP connection fault.")
             self.tcpClient = None
@@ -247,6 +261,21 @@ class FirmwareSignTool(wx.Frame):
         if self.tcpClient is None:
             return
         user, pwd = self.userFI.GetLineText(0), self.pwdFI.GetLineText(0)
+        # create secure random bytes
+        
+
+
+        datab, self.ownRandom = self.msgMgr.dumpMsg(action='LI1', dataArgs=(user))
+        self.tcpClient.send(datab)
+        response = self.tcpClient.recv(BUFFER_SIZE)
+        dataDict = self.msgMgr.loadMsg(response)
+
+
+
+
+        loginUbytes = 'U'.encode('utf-8') + user.encode('utf-8') + self.ownRandom 
+        self.tcpClient.send(loginUbytes)
+        response = self.tcpClient.recv(BUFFER_SIZE)
         loginStr = ";".join(['L', user, pwd])
         self.tcpClient.send(loginStr.encode('utf-8'))
         response = self.tcpClient.recv(BUFFER_SIZE)

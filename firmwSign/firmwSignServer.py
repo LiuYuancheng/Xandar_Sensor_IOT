@@ -20,11 +20,12 @@ import socket
 import chilkat
 import IOT_Att as SWATT
 import firmwDBMgr as DataBase
+import firmwMsgMgr
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 5005
 BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
-
+RAN_LEN = 4
 
 dirpath = os.getcwd()
 print("current directory is : " + dirpath)
@@ -45,7 +46,9 @@ class FirmwServ(object):
         self.rsaDecryptor = self.initDecoder(Mode='RSA')
         self.tcpServer = self.initTCPServ()
         self.swattHd =  SWATT.swattCal()
+        self.msgMgr= firmwMsgMgr.msgMgr(self) # create the message manager.
         self.ranStr = ""
+        self.ownRandom = None
         self.responseEpc = None # expect response of the firmware file.
         self.dbMgr = DataBase.firmwDBMgr()
 
@@ -94,9 +97,25 @@ class FirmwServ(object):
         letters = string.ascii_lowercase
         return ''.join(random.choice(letters) for i in range(stringLength))
 
+
+#-----------------------------------------------------------------------------
+    def securRadeom(self, stringLength = 4):
+        """  OpenSSL update 17.3.0 (2017-09-14)
+            Removed the deprecated OpenSSL.rand module. This is being done 
+            ahead of our normal deprecation schedule due to its lack of use 
+            and the fact that it was becoming a maintenance burden. os.urandom()
+            should be used instead
+        """
+        pass
+
 #-----------------------------------------------------------------------------
     def checkLogin(self, userName, password):
         return self.dbMgr.authorizeUser(userName, password)
+
+
+    def handleConnection(self, sender, dataDict):
+        reply = self.msgMgr.dumpMsg(action='HB',dataArgs=('CR', 1))
+        sender.send(reply)
 
 #-----------------------------------------------------------------------------
     def startServer(self):
@@ -111,7 +130,15 @@ class FirmwServ(object):
                 while not terminate:
                     data = conn.recv(BUFFER_SIZE)
                     if not data: break # get the ending message. 
+                    
                     print("received data:"+str(data))
+                    dataDict = self.msgMgr.loadMsg(data)
+                    print(dataDict)
+                    if dataDict['act'] == 'CR':
+                        self.handleConnection(conn, dataDict)
+                    return
+
+
                     # Handle the login request.
                     if data == b'login':
                         conn.send(b'Done')
@@ -122,7 +149,21 @@ class FirmwServ(object):
                             data = f.read()
                             conn.sendall(data)
                     else:
-                        dataStr= data.decode('utf-8')
+                        dataTag= data[0:1].decode('utf-8')
+                        # handle the log in
+                        if dataTag == 'U':
+                            # user login.
+                            userName = data[1:-4]
+                            userRanNum = data[-4:]
+                            #
+                            if self.dbMgr.checkUser(userName):
+                                self.ownRandom = os.urandom(RAN_LEN)
+                                conn.send(userRanNum+self.ownRandom)
+                            else:
+                                conn.send('uf'.encode('utf-8'))
+
+
+
                         # Handle the username and password.
                         if dataStr[:2] == 'L;':
                             args =  dataStr.split(';')

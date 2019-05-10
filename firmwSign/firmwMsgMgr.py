@@ -17,17 +17,28 @@ RAN_LEN = 4
 # LR3   - login response 3
 # CF    - certificate Fetch.    
 
-class msgTrans(object):
+class msgMgr(object):
     
-    def __init__(self):
+    def __init__(self, parent):
         self.data = None
 
-    def dumpMsg(self, action, dataArgs=None):
+    def dumpMsg(self, action=None, dataArgs=None):
+        datab = None
         if action == 'CR':
-            self.createCRmsg()
-            pass
+            datab = self.createCRmsg()
+        elif action == 'HB':
+            lastAct, state = dataArgs
+            datab = self.createHBmsg(lastAct, state)
+        elif 'LI' in action:
+            datab = self.createLImsg(args=dataArgs)
+        elif 'LR' in action:
+            datab = self.createLRmsg(dataArgs)
+        elif action == 'FL':
+            datab = self.createFLmsg(dataArgs)
+        elif action == 'SR':
+            datab = self.createSRmsg(dataArgs)
         
-        pass
+        return datab
 
     def createCRmsg(self):
         msgDict = {
@@ -38,16 +49,19 @@ class msgTrans(object):
         data = json.dumps(msgDict).encode('utf-8')
         return tag + data
 
-    def createHBmsg(self):
+    def createHBmsg(self, lastAct, state):
         msgDict = {
             "act":  'HB',
-            "time": time.time()
+            "lAct": lastAct, # last received action 
+            "state": state      # last state. 
         }
         tag = CMD_TYPE
         data = json.dumps(msgDict).encode('utf-8')
         return tag + data
 
     def createLImsg(self, args = None):
+        if args is None: 
+            return None 
         if len(args) == 1:
             (userName) = args
             randomB = os.urandom(RAN_LEN)
@@ -70,10 +84,10 @@ class msgTrans(object):
 
     def createLRmsg(self, args = None):
         if len(args) == 1:
-            (liStatus) = args
+            (challenge) = args
             msgDict = {
                 "act"       : 'LR2',
-                "state"      : liStatus,
+                "challenge" : challenge,
             }
             data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return data
@@ -89,11 +103,41 @@ class msgTrans(object):
             data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return (data, randomB2)
 
+    def createCFmsg(self):
+        msgDict = {
+            "act":  'CF',
+            "time": time.time()
+        }
+        tag = CMD_TYPE
+        data = json.dumps(msgDict).encode('utf-8')
+        return tag + data
+
+    def createSRmsg(self, args):
+        sensorId, swatt , typeS, versionS, signS = args
+        msgDict = {
+            "act"   : 'SR',
+            "id"    : sensorId, 
+            "swatt" : swatt,
+            "tpye"  : typeS,
+            "version": versionS,
+            "signStr": signS
+        }
+        tag = CMD_TYPE
+        data = json.dumps(msgDict).encode('utf-8')
+        return tag + data
+
+    def createFLmsg(self, bytesData):
+        tag = FILE_TYPE
+        return tag + bytesData
+
     def loadMsg(self, msg):
         tag = msg[0:1]
         if tag == CMD_TYPE:
             data = msg[1:]
             return json.loads(data)
+        elif tag == FILE_TYPE:
+            data = msg[1:]
+            return data
 
 def testCase():
     testMsgr = msgTrans()
