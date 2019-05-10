@@ -319,20 +319,13 @@ class FirmwareSignTool(wx.Frame):
         signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
         datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, swatt_str, date_str, sensor_type, version, signature))
         self.tcpClient.send(datab)
+        print("xxxxxxxxxxx")
 
 
-        
         response = self.tcpClient.recv(BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
-        mapStr = json.dumps(dataDict)
-        print("This is map string data: " + mapStr)
-
-
-        
-        #sendStr = self.getEncryptedStr(mapStr)
-
-        if self.tcpClient:
-            self.tcpClient.sendall(sendStr.encode('utf-8'))
+        if dataDict['act'] == 'HB' and dataDict['lAct']:
+            print("The firmware is signed succesflly")
 
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):

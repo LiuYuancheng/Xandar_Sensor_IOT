@@ -184,10 +184,11 @@ class FirmwServ(object):
             rcdList = (int(dataDict['id']), self.ranStr, str(dataDict['swatt']),
              dataDict['date'], dataDict['tpye'], dataDict['version'], SCERT_PATH, dataDict['signStr'])
             self.dbMgr.createFmSignRcd(rcdList)
-
-        
-
-
+            reply = self.msgMgr.dumpMsg(action='HB',dataArgs=('SR', 1))
+            sender.send(reply)
+        else:
+            reply = self.msgMgr.dumpMsg(action='HB',dataArgs=('SR', 0))
+            sender.send(reply)
 
 #-----------------------------------------------------------------------------
     def startServer(self):
