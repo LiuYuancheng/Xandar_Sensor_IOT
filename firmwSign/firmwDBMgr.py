@@ -14,11 +14,12 @@ import os
 import hashlib
 import sqlite3
 from sqlite3 import Error
+RAN_LEN = 4
 
 dirpath = os.getcwd()
 #DB_PATH = "".join([dirpath, "\\firmwSign\\firmwDB.db"])
 DB_PATH = "".join([dirpath, "\\firmwDB.db"])
-DE_USER = ("admin", '123') # defualt user.
+DE_USER = ("admin", os.urandom(RAN_LEN).hex(), '123') # defualt user.
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -40,11 +41,14 @@ class firmwDBMgr(object):
                                 swatt text NOT NULL,
                                 date text NOT NULL,
                                 type text,
-                                version text NOT NULL
+                                version text NOT NULL,
+                                certPath text NOT NULL,
+                                signature text NOT NULL
                             );"""
 
             self.sql_user_table = """ CREATE TABLE IF NOT EXISTS userInFo(
                                 user text PRIMARY KEY,
+                                salt text NOT NULL,
                                 pwdHash text NOT NULL
                             );"""
 
@@ -55,15 +59,15 @@ class firmwDBMgr(object):
             self.createTable(self.sql_user_table)
             # Add default user if needed.
             self.addUser(DE_USER)
-        self.addUser(('123','123'))
+        self.addUser(('123', os.urandom(RAN_LEN).hex(), '123'))
         print ( self.authorizeUser('123','123'))
 #-----------------------------------------------------------------------------
 
     def addUser(self, args):
         """ Add a not exist user and password in the DB.
         """
-        user, pwd = args
-        pwdhash = hashlib.md5(str(pwd).encode('utf-8')).hexdigest()
+        user, salt, pwd = args
+        pwdhash = hashlib.sha256(bytes.fromhex(salt) + str(pwd).encode('utf-8')).hexdigest()
         # Check wether user in the DB already:
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
         with self.conn:
@@ -75,20 +79,19 @@ class firmwDBMgr(object):
                 return False
 
         print("Add user %s in to the data base" % str(user))
-        sql = ''' INSERT INTO userInFo(user, pwdHash)
-                VALUES(?,?) '''
+        sql = ''' INSERT INTO userInFo(user, salt, pwdHash)
+                VALUES(?,?,?) '''
         with self.conn:
             cur = self.conn.cursor()
-            cur.execute(sql, (str(user), str(pwdhash)))
+            cur.execute(sql, (str(user), salt, str(pwdhash)))
         return True
 
 #-----------------------------------------------------------------------------
     def authorizeUser(self, user, pwd):
         """ Authorize user and password 
         """
-        pwdhash = hashlib.md5(str(pwd).encode('utf-8')).hexdigest()
         # Check wether user in the DB already:
-        selectSQL = '''SELECT pwdHash FROM userInFo WHERE user=?'''
+        selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(selectSQL, (str(user),))
@@ -96,8 +99,11 @@ class firmwDBMgr(object):
             if len(rows) == 0:
                 return False
             for row in rows:
-                if row[0] == pwdhash:
+                user, salt, pwdhash = row
+                if pwdhash == hashlib.sha256(bytes.fromhex(salt) + str(pwd).encode('utf-8')).hexdigest():
                     return True
+                else:
+                    return False
             return False
 
     def checkUser(self, userName):
@@ -105,6 +111,7 @@ class firmwDBMgr(object):
         """
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
         with self.conn:
+            print(userName)
             cur = self.conn.cursor()
             cur.execute(selectSQL, (str(userName),))
             rows = cur.fetchall()
@@ -112,7 +119,6 @@ class firmwDBMgr(object):
                 print("The user %s is exists" % str(userName))
                 return True
         return False
-
 
 #-----------------------------------------------------------------------------
     def createTable(self, create_table_sql):
@@ -136,11 +142,11 @@ class firmwDBMgr(object):
 
 #-----------------------------------------------------------------------------
     def createFmSignRcd(self, rcdArgs):
-        if len(rcdArgs) != 6: 
+        if len(rcdArgs) != 8: 
             print("The firmware sign inforamtion <%s> element missing." %str(rcdArgs))
 
-        sql = ''' INSERT INTO firmwareInfo( sensorID, challenge, swatt, date, type, version)
-                VALUES(?,?,?,?,?,?) '''
+        sql = ''' INSERT INTO firmwareInfo( sensorID, challenge, swatt, date, type, version, certPath, signature)
+                VALUES(?,?,?,?,?,?,?,?) '''
         #rcdArgs = ( 203, 'default challenge', '0x1245', '2015-01-01', 'XKAK_PPL_COUNT', '1.01')
         with self.conn:
             cur = self.conn.cursor()

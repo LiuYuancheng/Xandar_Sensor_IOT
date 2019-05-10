@@ -21,6 +21,7 @@ import chilkat
 import IOT_Att as SWATT
 import firmwDBMgr as DataBase
 import firmwMsgMgr
+from OpenSSL import crypto
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 5005
@@ -34,6 +35,10 @@ CERT_PATH = "".join([dirpath, "\\publickey.cer"])
 PRI_PATH = "".join( [dirpath, "\\privatekey.pem"])
 DEFUALT_FW= "".join([dirpath, "\\firmwareSample"])
 
+# SignCert
+SCERT_PATH = "".join([dirpath, "\\certificate.pem"])
+SPRIV_PATH = "".join([dirpath, "\\private_key.pem"])
+
 
 ENCODE_MODE = 'base64' # or 'hex'
 
@@ -42,15 +47,23 @@ ENCODE_MODE = 'base64' # or 'hex'
 class FirmwServ(object):
     
     def __init__(self):
-
+        
         self.rsaDecryptor = self.initDecoder(Mode='RSA')
         self.tcpServer = self.initTCPServ()
+        self.cert = None
+        self.initVerifier()
         self.swattHd =  SWATT.swattCal()
         self.msgMgr= firmwMsgMgr.msgMgr(self) # create the message manager.
         self.ranStr = ""
+        self.loginUser = None
         self.ownRandom = None
         self.responseEpc = None # expect response of the firmware file.
         self.dbMgr = DataBase.firmwDBMgr()
+
+    def initVerifier(self):
+        with open(SCERT_PATH,'rb') as f:
+            self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
+        print("Sign: Locaded the sign certificate file.")
 
     def initDecoder(self, Mode=None):
         """ init the message decoder. 
@@ -117,6 +130,65 @@ class FirmwServ(object):
         reply = self.msgMgr.dumpMsg(action='HB',dataArgs=('CR', 1))
         sender.send(reply)
 
+    def handleLogin(self, sender, dataDict):
+        self.loginUser = dataDict['user']
+        if self.dbMgr.checkUser(self.loginUser):
+            print("find the user")
+            reply, self.ownRandom = self.msgMgr.dumpMsg(action='LR1',dataArgs=(dataDict['random1'], 1))
+            sender.send(reply)
+        else:
+            self.loginUser = None
+            reply = self.msgMgr.dumpMsg(action='HB',dataArgs=('LI1', 0))
+            sender.send(reply)
+
+    def handleAuthrozie(self, sender, dataDict):
+        if bytes.fromhex(dataDict['random2']) == self.ownRandom:
+            if self.dbMgr.authorizeUser(self.loginUser, dataDict['password']):
+                print("user login")
+                self.ranStr = self.randomChallStr(stringLength=10)
+                reply = self.msgMgr.dumpMsg(action='LR2',dataArgs=(self.ranStr,))
+                sender.send(reply)
+        else:
+            print("wrong user connected.")
+            reply = self.msgMgr.dumpMsg(action='HB',dataArgs=('LI2', 0))
+            sender.send(reply)
+
+    def handleCertFetch(self, sender, dataDict):
+        f_send = SPRIV_PATH
+        # f_send = "publickey.cer" # user the file.
+        with open(f_send, "rb") as f:
+            data = f.read()
+            reply = self.msgMgr.dumpMsg(action='FL', dataArgs=data)
+            sender.send(reply)
+
+    def handleSignResp(self, sender, dataDict):
+        checkStr = ''.join([str(dataDict['id']), 
+                            str(dataDict['swatt']),
+                            str(dataDict['date']),
+                            str(dataDict['tpye']),
+                            str(dataDict['version'])
+                            ])
+        encryptedStr = dataDict['signStr']
+        print("decode the signature string")
+        #usePrivateKey = True
+        #decryptedStr = self.rsaDecryptor.decryptStringENC(encryptedStr,usePrivateKey)
+        sign = bytes.fromhex(dataDict['signStr'])
+        verifyR = crypto.verify(self.cert, sign, checkStr.encode('utf-8'), 'sha256')
+        if verifyR is None: 
+            print ("The result is correct.")        
+        print("This is the decryptioin sstr:" + checkStr)
+        # Double confirm the SWATT 
+        self.responseEpc = self.swattHd.getSWATT(self.ranStr, 300, DEFUALT_FW)
+        if dataDict['swatt'] == self.responseEpc:
+            print("The firmware is signed successfully")
+            rcdList = (int(dataDict['id']), self.ranStr, str(dataDict['swatt']),
+             dataDict['date'], dataDict['tpye'], dataDict['version'], SCERT_PATH, dataDict['signStr'])
+            self.dbMgr.createFmSignRcd(rcdList)
+
+        
+
+
+
 #-----------------------------------------------------------------------------
     def startServer(self):
 
@@ -134,9 +206,19 @@ class FirmwServ(object):
                     print("received data:"+str(data))
                     dataDict = self.msgMgr.loadMsg(data)
                     print(dataDict)
+
                     if dataDict['act'] == 'CR':
                         self.handleConnection(conn, dataDict)
-                    return
+                    elif dataDict['act'] == 'LI1':
+                        self.handleLogin(conn, dataDict)
+                    elif dataDict['act'] == 'LI2':
+                        self.handleAuthrozie(conn, dataDict)
+                    elif dataDict['act'] == 'CF':
+                        self.handleCertFetch(conn, dataDict)
+                    elif dataDict['act'] == 'SR':
+                        self.handleSignResp(conn, dataDict)
+
+                    continue
 
 
                     # Handle the login request.

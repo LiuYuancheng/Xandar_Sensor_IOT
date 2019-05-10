@@ -27,7 +27,7 @@ from functools import partial
 from datetime import datetime
 import IOT_Att as SWATT
 import firmwMsgMgr
-
+from OpenSSL import crypto
 
 pyVersionStr = str(platform.python_version())
 # TCP Server ip + port list:
@@ -48,6 +48,7 @@ dirpath = os.getcwd()
 print("Current working directory is : %s" %dirpath)
 
 CER_PATH = "".join([dirpath, "\\firmwSign\\receivered.cer"])
+SCER_PATH = "".join([dirpath, "\\firmwSign\\receivered.pem"])
 DEFUALT_FW = "".join([dirpath, "\\firmwSign\\firmwareSample"])
 
 #-----------------------------------------------------------------------------
@@ -65,6 +66,7 @@ class FirmwareSignTool(wx.Frame):
         self.bIOhandler = None
         self.ownRandom = None
         self.serRandom = None
+        self.priv_key = None
 
         self.swattHd = SWATT.swattCal()
         self.swattChaStr = 'Default Challenge String'
@@ -192,15 +194,19 @@ class FirmwareSignTool(wx.Frame):
 #-----------------------------------------------------------------------------
     def fetchCert(self):
         """ Send the certificate file fetch request. """
-        self.tcpClient.send(b'Fetch')
+
+        datab = self.msgMgr.dumpMsg(action='CF')
+        self.tcpClient.send(datab)
+        fileSize = 4096
+        response = self.tcpClient.recv(fileSize)
+        data = self.msgMgr.loadMsg(response)
+        # here we assument the file not more than 4K
         if self.saveCert:
-            f = open(CER_PATH, "wb")
-            # here we assument the file not more than 4K
-            data = self.tcpClient.recv(4096)
+            #f = open(CER_PATH, "wb")
+            f = open(SCER_PATH, "wb")
             f.write(data)
             f.close()
         else:
-            data = self.tcpClient.recv(4096)
             self.bIOhandler = chilkat.CkBinData()
             # Append the bytes in the IO handler.
             for b in data:
@@ -255,56 +261,76 @@ class FirmwareSignTool(wx.Frame):
         pubKey = cert.ExportPublicKey()
         success = self.rsaEncryptor.ImportPublicKey(pubKey.getXml())
 
+    def loadPrivateK(self):
+        if self.saveCert and not os.path.exists(SCER_PATH):
+            print("The private file is not exist")
+        with open(SCER_PATH,'rb') as f:
+            self.priv_key = crypto.load_privatekey(crypto.FILETYPE_PEM, f.read())
+
 #-----------------------------------------------------------------------------
     def loginServer(self, event):
         """ Login ther firmware sign server. """
         if self.tcpClient is None:
             return
         user, pwd = self.userFI.GetLineText(0), self.pwdFI.GetLineText(0)
-        # create secure random bytes
-        
-
-
-        datab, self.ownRandom = self.msgMgr.dumpMsg(action='LI1', dataArgs=(user))
+        # Send the username and randome to server.
+        datab, self.ownRandom = self.msgMgr.dumpMsg(action='LI1', dataArgs=[user])
         self.tcpClient.send(datab)
         response = self.tcpClient.recv(BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
-
-
-
-
-        loginUbytes = 'U'.encode('utf-8') + user.encode('utf-8') + self.ownRandom 
-        self.tcpClient.send(loginUbytes)
-        response = self.tcpClient.recv(BUFFER_SIZE)
-        loginStr = ";".join(['L', user, pwd])
-        self.tcpClient.send(loginStr.encode('utf-8'))
-        response = self.tcpClient.recv(BUFFER_SIZE)
-        if response != b'Fail':
-            self.signBt.Enable(True)
-            self.swattChaStr = response.decode('utf-8')
-            self.fetchCert()
-            self.statusbar.SetStatusText("Login and fetch sertificate suscessful.")
-        else:
-            self.signBt.Enable(False)
-            self.statusbar.SetStatusText("UserName or password invalid")
+        if dataDict['act'] == 'HB':
+            if dataDict['lAct'] == 'LI1' and  not dataDict['state']: 
+                print("Login: the user is not exist")
+                return
+        elif dataDict['act'] == 'LR1':
+            if dataDict['state']:
+                if  bytes.fromhex(dataDict['random1']) == self.ownRandom:
+                    datab = self.msgMgr.dumpMsg(action='LI2', dataArgs=(dataDict['random2'], pwd))
+                    self.tcpClient.send(datab)
+                    response = self.tcpClient.recv(BUFFER_SIZE)
+                    dataDict = self.msgMgr.loadMsg(response)
+                    if dataDict['act'] =='LR2':
+                        self.swattChaStr = dataDict['challenge']
+                        self.signBt.Enable(True)
+                        self.statusbar.SetStatusText("Login and fetch sertificate suscessful.")
+                    else:
+                        self.signBt.Enable(False)
+                        self.statusbar.SetStatusText("UserName or password invalid")
+                else:
+                    print("Login: The server dosent response correctly.")
+                    
+            return
 
 #-----------------------------------------------------------------------------
     def signFirmware(self, event):
         """ Sign the firmware file and send the data to server. 
         """
+        self.fetchCert()
         print("sign the firmware")
-        self.loadCert()
-        dataDict = {
-            'id'    : SENSOR_ID,
-            'swatt'  : self.getSWATThash(self.firmwarePath),
-            #'date'  : str(datetime.now().strftime("%d/%m/%Y")),
-            'date'  : str(datetime.now()),
-            'tpye'  : 'XKAK_PPL_COUNT',
-            'version': '1.01'
-        }
+        #self.loadCert()
+        self.loadPrivateK()
+        sensor_id = str(SENSOR_ID)
+        swatt_str = self.getSWATThash(self.firmwarePath)
+        date_str = str(datetime.now())
+        sensor_type = 'XKAK_PPL_COUNT'
+        version = '1.01'
+        combinStr = ''.join([sensor_id, swatt_str, date_str, sensor_type, version])
+        #signature = self.getEncryptedStr(combinStr)
+        signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
+        datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, swatt_str, date_str, sensor_type, version, signature))
+        self.tcpClient.send(datab)
+
+
+        
+        response = self.tcpClient.recv(BUFFER_SIZE)
+        dataDict = self.msgMgr.loadMsg(response)
         mapStr = json.dumps(dataDict)
         print("This is map string data: " + mapStr)
-        sendStr = self.getEncryptedStr(mapStr)
+
+
+        
+        #sendStr = self.getEncryptedStr(mapStr)
+
         if self.tcpClient:
             self.tcpClient.sendall(sendStr.encode('utf-8'))
 

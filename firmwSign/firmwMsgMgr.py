@@ -16,6 +16,7 @@ RAN_LEN = 4
 # LI3   - login step3
 # LR3   - login response 3
 # CF    - certificate Fetch.    
+# SR    - signature response
 
 class msgMgr(object):
     
@@ -30,14 +31,17 @@ class msgMgr(object):
             lastAct, state = dataArgs
             datab = self.createHBmsg(lastAct, state)
         elif 'LI' in action:
+            #print(action)
             datab = self.createLImsg(args=dataArgs)
         elif 'LR' in action:
             datab = self.createLRmsg(dataArgs)
+        elif action == 'CF':
+            datab = self.createCFmsg()
         elif action == 'FL':
             datab = self.createFLmsg(dataArgs)
         elif action == 'SR':
             datab = self.createSRmsg(dataArgs)
-        
+        #print(datab)
         return datab
 
     def createCRmsg(self):
@@ -60,10 +64,11 @@ class msgMgr(object):
         return tag + data
 
     def createLImsg(self, args = None):
-        if args is None: 
+        #print(args)
+        if args is None:
             return None 
         if len(args) == 1:
-            (userName) = args
+            userName = args[0]
             randomB = os.urandom(RAN_LEN)
             msgDict = {
                 "act"       : 'LI1',
@@ -77,14 +82,14 @@ class msgMgr(object):
             msgDict = {
                 "act"       : 'LI2',
                 "random2"   : randomB,
-                "random1"   : password 
+                "password"   : password 
             }
             data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return data
 
     def createLRmsg(self, args = None):
         if len(args) == 1:
-            (challenge) = args
+            challenge = args[0]
             msgDict = {
                 "act"       : 'LR2',
                 "challenge" : challenge,
@@ -113,14 +118,15 @@ class msgMgr(object):
         return tag + data
 
     def createSRmsg(self, args):
-        sensorId, swatt , typeS, versionS, signS = args
+        sensorId, swatt , date, typeS, versionS, signS = args
         msgDict = {
             "act"   : 'SR',
             "id"    : sensorId, 
             "swatt" : swatt,
+            "date"  : date,
             "tpye"  : typeS,
             "version": versionS,
-            "signStr": signS
+            "signStr": signS.hex()
         }
         tag = CMD_TYPE
         data = json.dumps(msgDict).encode('utf-8')
