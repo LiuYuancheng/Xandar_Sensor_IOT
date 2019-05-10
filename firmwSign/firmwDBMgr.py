@@ -14,12 +14,12 @@ import os
 import hashlib
 import sqlite3
 from sqlite3 import Error
-RAN_LEN = 4
 
 dirpath = os.getcwd()
-#DB_PATH = "".join([dirpath, "\\firmwSign\\firmwDB.db"])
-DB_PATH = "".join([dirpath, "\\firmwDB.db"])
-DE_USER = ("admin", os.urandom(RAN_LEN).hex(), '123') # defualt user.
+RAN_LEN = 4 # defualt radar number length 4bytes.
+DB_PATH = "".join([dirpath, "\\firmwDB.db"])            # sqlite database file.
+DE_USER = ("admin", os.urandom(RAN_LEN).hex(), '123')   # defualt user.
+
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -107,12 +107,13 @@ class firmwDBMgr(object):
                     return False
             return False
 
+#-----------------------------------------------------------------------------
     def checkUser(self, userName):
         """ Check whehter the user is in the data base.
         """
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
         with self.conn:
-            print(userName)
+            #print(userName)
             cur = self.conn.cursor()
             cur.execute(selectSQL, (str(userName),))
             rows = cur.fetchall()

@@ -20,22 +20,25 @@ RAN_LEN = 4
 # Action type:
 # CR    - Connection request
 # HB    - Heart beat (feedback)
-# LI1   - Login step1
-# LR1   - Login response 1
-# LI2   - login step2
-# LR2   - login response 2
-# LI3   - login step3
-# LR3   - login response 3
+# LI1   - Login step 1 [Username + random1]
+# LR1   - Login response 1 [random1 + random2]
+# LI2   - login step2 [random2 + password]
+# LR2   - login response 2 [Challenge for SWATT]
 # CF    - certificate Fetch.    
 # SR    - signature response
 
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 class msgMgr(object):
     
     def __init__(self, parent):
         self.parent = parent
         self.data = None
 
+#-----------------------------------------------------------------------------
     def dumpMsg(self, action=None, dataArgs=None):
+        """ Create the bytes message base on the action for sending to server.
+        """
         datab = None
         if action == 'CR':
             datab = self.createCRmsg()
@@ -53,28 +56,32 @@ class msgMgr(object):
             datab = self.createFLmsg(dataArgs)
         elif action == 'SR':
             datab = self.createSRmsg(dataArgs)
-        #print(datab)
         return datab
 
+#-----------------------------------------------------------------------------
     def createCRmsg(self):
+        """ Create the connection response message.
+        """
         msgDict = {
-            "act":  'CR',
-            "time": time.time()
+            "act"   : 'CR',
+            "time"  : time.time()
         }
         tag = CMD_TYPE
         data = json.dumps(msgDict).encode('utf-8')
         return tag + data
 
+#-----------------------------------------------------------------------------
     def createHBmsg(self, lastAct, state):
         msgDict = {
-            "act":  'HB',
-            "lAct": lastAct, # last received action 
-            "state": state      # last state. 
+            "act"   : 'HB',
+            "lAct"  : lastAct,  # last received action 
+            "state" : state     # last action exe state. 
         }
         tag = CMD_TYPE
         data = json.dumps(msgDict).encode('utf-8')
         return tag + data
 
+#-----------------------------------------------------------------------------
     def createLImsg(self, args = None):
         #print(args)
         if args is None:
@@ -94,11 +101,12 @@ class msgMgr(object):
             msgDict = {
                 "act"       : 'LI2',
                 "random2"   : randomB,
-                "password"   : password 
+                "password"  : password 
             }
             data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return data
 
+#-----------------------------------------------------------------------------
     def createLRmsg(self, args = None):
         if len(args) == 1:
             challenge = args[0]
@@ -120,15 +128,17 @@ class msgMgr(object):
             data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return (data, randomB2)
 
+#-----------------------------------------------------------------------------
     def createCFmsg(self):
         msgDict = {
-            "act":  'CF',
-            "time": time.time()
+            "act"   : 'CF',
+            "time"  : time.time()
         }
         tag = CMD_TYPE
         data = json.dumps(msgDict).encode('utf-8')
         return tag + data
 
+#-----------------------------------------------------------------------------
     def createSRmsg(self, args):
         sensorId, signerId,swatt , date, typeS, versionS, signS = args
         msgDict = {
@@ -145,10 +155,12 @@ class msgMgr(object):
         data = json.dumps(msgDict).encode('utf-8')
         return tag + data
 
+#-----------------------------------------------------------------------------
     def createFLmsg(self, bytesData):
         tag = FILE_TYPE
         return tag + bytesData
 
+#-----------------------------------------------------------------------------
     def loadMsg(self, msg):
         tag = msg[0:1]
         if tag == CMD_TYPE:
@@ -176,7 +188,7 @@ def testCase():
 
     print("Heart beat test:")
     msgkey = ("act", "time")
-    msg = testMsgr.createHBmsg()
+    msg = testMsgr.createHBmsg( None, 0)
     msgDict = testMsgr.loadMsg(msg)
     tPass = 0
     for i in msgkey:
@@ -185,6 +197,6 @@ def testCase():
     if tPass == len(msgkey):
         print("Connection request test pass")
 
-
+#-----------------------------------------------------------------------------
 if __name__ == '__main__':
     testCase()
