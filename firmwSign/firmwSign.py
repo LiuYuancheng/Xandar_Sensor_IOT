@@ -27,6 +27,7 @@ from functools import partial
 from datetime import datetime
 import IOT_Att as SWATT
 import firmwMsgMgr
+import firmwTLSclient as SSLC
 from OpenSSL import crypto
 
 pyVersionStr = str(platform.python_version())
@@ -62,6 +63,7 @@ class FirmwareSignTool(wx.Frame):
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         # init parameter here:
         self.tcpClient = None
+        self.sslClient = SSLC.TLS_sslClient(self) # changed to ssl client.
         self.msgMgr= firmwMsgMgr.msgMgr(self) # create the message manager.
         self.saveCert = True # flag to specify wehter we save certificate in local.
         self.bIOhandler = None
@@ -173,11 +175,20 @@ class FirmwareSignTool(wx.Frame):
             self.serverchoice.GetSelection())
         ip, port = SERVER_CHOICE[ServerName]
         try:
-            self.tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.tcpClient.connect((ip, port))
-            connectRequest = self.msgMgr.dumpMsg(action='CR')
-            self.tcpClient.send(connectRequest)
-            response = self.tcpClient.recv(BUFFER_SIZE)
+            response = None
+            if not self.sslClient:
+                self.tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.tcpClient.connect((ip, port))
+                connectRequest = self.msgMgr.dumpMsg(action='CR')
+                self.tcpClient.send(connectRequest)
+                response = self.tcpClient.recv(BUFFER_SIZE)
+            else:
+                self.tcpClient = self.sslClient # Assign the ssl client as defualt TCP client
+                self.sslClient.connect((ip, port))
+                connectRequest = self.msgMgr.dumpMsg(action='CR')
+                self.sslClient.send(connectRequest)
+                response = self.sslClient.recv(BUFFER_SIZE)
+                
             dataDict = self.msgMgr.loadMsg(response)
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'CR':
                 if dataDict['state']:
@@ -191,7 +202,7 @@ class FirmwareSignTool(wx.Frame):
         except:
             print("TCP connection fault.")
             self.tcpClient = None
-
+            self.sslClient = None
 #-----------------------------------------------------------------------------
     def fetchCert(self):
         """ Send the certificate file fetch request. """

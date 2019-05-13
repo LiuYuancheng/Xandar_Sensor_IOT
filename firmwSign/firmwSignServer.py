@@ -21,7 +21,9 @@ import chilkat
 import IOT_Att as SWATT
 import firmwDBMgr as DataBase
 import firmwMsgMgr
+import firmwTLSserver as SSLS
 from OpenSSL import crypto
+
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 5005
@@ -49,7 +51,13 @@ class FirmwServ(object):
     def __init__(self):
         
         self.rsaDecryptor = self.initDecoder(Mode='RSA')
-        self.tcpServer = self.initTCPServ()
+        self.sslServer = SSLS.TLS_sslServer(self) # changed to ssl client
+        self.sslServer.serverSet(port = TCP_PORT, listen=1, block=1 )
+        if self.sslServer is None:
+            self.tcpServer = self.initTCPServ()
+        else:
+            self.tcpServer = self.sslServer
+            
         self.cert = None
         self.initVerifier()
         self.swattHd =  SWATT.swattCal()

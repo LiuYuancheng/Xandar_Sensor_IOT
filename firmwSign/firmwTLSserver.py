@@ -55,6 +55,9 @@ class TLS_sslServer(object):
     def acceptConnection(self):
         self.cli, addr = self.server.accept()
         print('Connection from %s' % (addr,))
+    
+    def accept(self):
+        return self.server.accept()
 
     def recv(self, buffSZ):
         try:
