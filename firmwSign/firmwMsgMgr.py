@@ -178,6 +178,7 @@ class msgMgr(object):
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
+# TODO: finished the test case.
 def testCase():
     testMsgr = msgMgr(None)
     print("Start the message process test:")

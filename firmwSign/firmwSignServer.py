@@ -57,7 +57,7 @@ class FirmwServ(object):
             self.tcpServer = self.initTCPServ()
         else:
             self.tcpServer = self.sslServer
-            
+
         self.cert = None
         self.initVerifier()
         self.swattHd =  SWATT.swattCal()
@@ -230,7 +230,6 @@ class FirmwServ(object):
                         self.handleSignResp(conn, dataDict)
 
                     continue
-
 
                     # Handle the login request.
                     if data == b'login':
