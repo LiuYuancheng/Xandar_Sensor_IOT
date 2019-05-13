@@ -113,7 +113,6 @@ class firmwDBMgr(object):
         """
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
         with self.conn:
-            #print(userName)
             cur = self.conn.cursor()
             cur.execute(selectSQL, (str(userName),))
             rows = cur.fetchall()

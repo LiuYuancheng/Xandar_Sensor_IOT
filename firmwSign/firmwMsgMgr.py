@@ -2,7 +2,8 @@
 # Name:        firmwMsgMgr.py
 #
 # Purpose:     This module is used create a message manager to dump the user 
-#              message to a json string/bytes data and load back to orignal data. 
+#              message to a json string/bytes data and load back to orignal
+#              data.(the detail usage you can follow the example in testCase) 
 # Author:      Yuancheng Liu
 #
 # Created:     2019/05/09

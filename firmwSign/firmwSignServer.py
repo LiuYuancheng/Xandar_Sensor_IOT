@@ -132,6 +132,7 @@ class FirmwServ(object):
 
     def handleLogin(self, sender, dataDict):
         self.loginUser = dataDict['user']
+        
         if self.dbMgr.checkUser(self.loginUser):
             print("find the user")
             reply, self.ownRandom = self.msgMgr.dumpMsg(action='LR1',dataArgs=(dataDict['random1'], 1))
@@ -146,7 +147,7 @@ class FirmwServ(object):
             if self.dbMgr.authorizeUser(self.loginUser, dataDict['password']):
                 print("user login")
                 self.ranStr = self.randomChallStr(stringLength=10)
-                reply = self.msgMgr.dumpMsg(action='LR2',dataArgs=(self.ranStr,))
+                reply = self.msgMgr.dumpMsg(action='LR2',dataArgs=self.ranStr)
                 sender.send(reply)
         else:
             print("wrong user connected.")

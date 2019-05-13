@@ -275,7 +275,7 @@ class FirmwareSignTool(wx.Frame):
             return
         user, pwd = self.userFI.GetLineText(0), self.pwdFI.GetLineText(0)
         # Send the username and randome to server.
-        datab, self.ownRandom = self.msgMgr.dumpMsg(action='LI1', dataArgs=[user])
+        datab, self.ownRandom = self.msgMgr.dumpMsg(action='LI1', dataArgs=user)
         self.tcpClient.send(datab)
         response = self.tcpClient.recv(BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
