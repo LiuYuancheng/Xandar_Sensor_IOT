@@ -52,7 +52,7 @@ class TLS_sslClient(object):
             return None
         self.sock.send(data)
 
-    def recv(self, buffSZ=4096):
+    def recv(self, buffSZ):
         return self.sock.recv(buffSZ)
 
     def shutdown(self):
@@ -68,7 +68,7 @@ def testCase():
     print("send the message to server")
     for _ in range(6):
         sslClient.send(b"test string")
-        print(sslClient.recv(buffSZ=1024).decode('utf-8'))
+        print(sslClient.recv(1024).decode('utf-8'))
     print("Finished and stop")
     sslClient.shutdown()
     sslClient.close()
