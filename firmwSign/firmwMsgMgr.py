@@ -48,7 +48,6 @@ class msgMgr(object):
             lastAct, state = dataArgs
             datab = self._createHBmsg(lastAct, state)
         elif 'LI' in action:
-            #print(action)
             datab = self._createLImsg(args=dataArgs)
         elif 'LR' in action:
             datab = self._createLRmsg(dataArgs)
@@ -182,27 +181,96 @@ class msgMgr(object):
 def testCase():
     testMsgr = msgMgr(None)
     print("Start the message process test:")
+    pCount = 0 
+    #
+    tPass = True
     print("Connection request test:")
-    msgkey = ("act", "time")
-    msg = testMsgr.createCRmsg()
+    msg = testMsgr.dumpMsg(action='CR')
     msgDict = testMsgr.loadMsg(msg)
-    tPass = 0
-    for i in msgkey:
-        if i in msgDict.keys():
-            tPass += 1
-    if tPass == len(msgkey):
-        print("Connection request test pass \n =")
-
-    print("Heart beat test:")
-    msgkey = ("act", "time")
-    msg = testMsgr.createHBmsg( None, 0)
-    msgDict = testMsgr.loadMsg(msg)
-    tPass = 0
-    for i in msgkey:
-        if i in msgDict.keys():
-            tPass += 1
-    if tPass == len(msgkey):
+    tPass = tPass and msgDict['act'] == 'CR'
+    tPass = tPass and 'time' in msgDict.keys()
+    if tPass:
+        pCount += 1
         print("Connection request test pass")
+    else:
+        print("Connection request test fail")
+    #
+    tPass = True
+    print("HearBeat message test:")
+    msg = testMsgr.dumpMsg(action='HB', dataArgs=('HB', 1))
+    msgDict = testMsgr.loadMsg(msg)
+    tPass = tPass and msgDict['act'] == 'HB'
+    tPass = tPass and msgDict['lAct'] == 'HB'
+    tPass = tPass and msgDict['state'] == 1
+    if tPass:
+        pCount += 1
+        print("HeartBeat request test pass")
+    else:
+        print("HeartBeat request test fail")
+    #
+    tPass = True
+    print("Login user request test:")
+    msg, val = testMsgr.dumpMsg(action='LI', dataArgs='user')
+    msgDict = testMsgr.loadMsg(msg)    
+    tPass = tPass and msgDict['act'] == 'LI1'
+    tPass = tPass and msgDict['user'] == 'user'
+    tPass = tPass and val.hex() == msgDict['random1']
+    if tPass:
+        pCount += 1
+        print("Login user request test pass")
+    else:
+        print("Login user request test fail")
+    # 
+    tPass = True
+    print("Login password request test:")
+    msg = testMsgr.dumpMsg(action='LI2', dataArgs=('1234', 'password'))
+    msgDict = testMsgr.loadMsg(msg)
+    tPass = tPass and msgDict['act'] == 'LI2'
+    tPass = tPass and msgDict['random2'] == '1234'
+    tPass = tPass and msgDict['password'] == 'password'
+    if tPass:
+        pCount += 1
+        print("Login password request test pass")
+    else:
+        print("Login password request test fail")
+    # 
+    tPass = True
+    print("Login user response test:")
+    msg, val = testMsgr.dumpMsg(action='LR', dataArgs=('1234', 1))
+    msgDict = testMsgr.loadMsg(msg)
+    tPass = tPass and msgDict['act'] == 'LR1'
+    tPass = tPass and msgDict['state'] == 1
+    tPass = tPass and msgDict['random1'] == '1234'
+    tPass = tPass and msgDict['random2'] == val.hex()
+    if tPass:
+        pCount += 1
+        print("Login user response test pass")
+    else:
+        print("Login suer response test fail")
+    #
+    tPass = True
+    print("Login password response test:")
+    msg = testMsgr.dumpMsg(action='LR', dataArgs='challenge')
+    msgDict = testMsgr.loadMsg(msg)
+    tPass = tPass and msgDict['act'] == 'LR2'
+    tPass = tPass and msgDict['challenge'] == 'challenge'
+    if tPass:
+        pCount += 1
+        print("Login password response test pass")
+    else:
+        print("Login password response test fail")
+    #
+    tPass = True
+    print("Certificate fetch request test:")
+    msg = testMsgr.dumpMsg(action='CF')
+    msgDict = testMsgr.loadMsg(msg)
+    tPass = tPass and msgDict['act'] == 'CF'
+    tPass = tPass and msgDict['time']
+    if tPass:
+        pCount += 1
+        print("Certificate fetch test pass")
+    else:
+        print("Certificate fetch test fail")
 
 #-----------------------------------------------------------------------------
 if __name__ == '__main__':

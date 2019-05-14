@@ -331,7 +331,7 @@ class FirmwareSignTool(wx.Frame):
         response = self.tcpClient.recv(BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB' and dataDict['lAct']:
-            print("FirmwSign: The firmware is signed succesflly")
+            print("FirmwSign: The firmware is signed successfully.")
 
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):

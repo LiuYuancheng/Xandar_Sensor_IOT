@@ -95,7 +95,6 @@ def testCase():
     sslClient.shutdown()
     sslClient.close()
 
-
 if __name__ == '__main__':
     pass
     testCase()
