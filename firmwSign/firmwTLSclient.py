@@ -84,12 +84,12 @@ class TLS_sslClient(object):
 #-----------------------------------------------------------------------------
 
 def testCase():
-    print("SSL Connect to server test")
+    print("SSL Connect to server test:")
     sslClient = TLS_sslClient(None)
     sslClient.connect(LOCAL_IP)
-    print("send the message to server")
+    print("Send the message to server")
     for _ in range(6):
-        sslClient.send(b"test string")
+        sslClient.send(b"send test string")
         print(sslClient.recv(1024).decode('utf-8'))
     print("Finished and stop")
     sslClient.shutdown()

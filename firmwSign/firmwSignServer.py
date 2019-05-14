@@ -117,6 +117,14 @@ class FirmwServ(object):
             sender.send(reply)
 
 #-----------------------------------------------------------------------------
+    def handleLogout(self):
+        """ handle user logout: clear all the parameters"""
+        self.loginUser = None
+        self.ownRandom = None
+        self.responseEpc = None
+        self.ranStr = ""
+
+#-----------------------------------------------------------------------------
     def handleSignResp(self, sender, dataDict):
         """ Parse the sign feed back message and verify the sign correction."""
         checkStr = ''.join([str(dataDict['id']),
@@ -242,6 +250,9 @@ class FirmwServ(object):
                         self.handleCertFetch(conn, dataDict)
                     elif dataDict['act'] == 'SR':
                         self.handleSignResp(conn, dataDict)
+                    elif dataDict['act'] == 'LO':
+                        self.handleLogout()
+                        break
                     else:
                         continue
             except:

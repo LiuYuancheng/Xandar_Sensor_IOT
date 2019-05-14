@@ -129,9 +129,12 @@ class FirmwareSignTool(wx.Frame):
             self, -1, "", size=(100, -1), style=wx.TE_PASSWORD | wx.TE_PROCESS_ENTER)
         self.pwdFI.SetBackgroundColour(wx.Colour(200, 200, 200))
         hbox_2.Add(self.pwdFI, flag=flagsR, border=2)
-        self.lgBt = wx.Button(self, label='LogIn', size=(70, 24))
-        self.lgBt.Bind(wx.EVT_BUTTON, self.loginServer)
-        hbox_2.Add(self.lgBt, flag=flagsR, border=2)
+        self.lgiBt = wx.Button(self, label='Login', size=(50, 24))
+        self.lgiBt.Bind(wx.EVT_BUTTON, self.loginServer)
+        hbox_2.Add(self.lgiBt, flag=flagsR, border=2)
+        self.lgoBt = wx.Button(self, label='Logout', size=(50, 24))
+        self.lgoBt.Bind(wx.EVT_BUTTON, self.logoutServer)
+        hbox_2.Add(self.lgoBt, flag=flagsR, border=2)
         sizer.Add(hbox_2, flag=flagsR, border=2)
         sizer.AddSpacer(10)
         # row idx = 3 Set the firmware file path:
@@ -155,7 +158,8 @@ class FirmwareSignTool(wx.Frame):
         self.hidenWidgetList.append(self.userFI)
         self.hidenWidgetList.append(self.pwdLb)
         self.hidenWidgetList.append(self.pwdFI)
-        self.hidenWidgetList.append(self.lgBt)
+        self.hidenWidgetList.append(self.lgiBt)
+        self.hidenWidgetList.append(self.lgoBt)
         return sizer
 
 #-----------------------------------------------------------------------------
@@ -310,6 +314,17 @@ class FirmwareSignTool(wx.Frame):
                     print("Login: The server dosent response correctly.")
             return
 
+#-----------------------------------------------------------------------------
+    def logoutServer(self, event):
+        """ log out from the firmwsign server"""
+        # Send the logout requst.
+        datab = self.msgMgr.dumpMsg(action='LO')
+        self.tcpClient.send(datab)
+        # disconnect from the server.
+        self.tcpClient.close()
+        self.signBt.Enable(False)
+        self.hideWidgets(hide=True)
+        
 #-----------------------------------------------------------------------------
     def signFirmware(self, event):
         """ Sign the firmware file and send the data to server. """

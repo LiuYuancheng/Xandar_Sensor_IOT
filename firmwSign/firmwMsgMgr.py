@@ -24,6 +24,7 @@ RAN_LEN = 4 # The random number/bytes length.
 # LR1   - Login response 1 [random1 + random2(client<-server)]
 # LI2   - Login request step2 [random2 + password]
 # LR2   - Login response 2 [Challenge for SWATT]
+# LO    - Logout requst.
 # CF    - Certificate file fetch.    
 # SR    - Signature response
 
@@ -57,6 +58,8 @@ class msgMgr(object):
             datab = self._createFLmsg(dataArgs)
         elif action == 'SR':
             datab = self._createSRmsg(dataArgs)
+        elif action == 'LO':
+            datab = self._createLOmsg()
         return datab
 
 #-----------------------------------------------------------------------------
@@ -138,6 +141,15 @@ class msgMgr(object):
             }
             data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return (data, randomB2)
+
+#-----------------------------------------------------------------------------
+    def _createLOmsg(self):
+        """Create a log out requst."""
+        msgDict = {
+            "act"   : 'LO',
+            "time"  : time.time()
+        }
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createCFmsg(self):
@@ -271,6 +283,18 @@ def testCase():
         print("Certificate fetch test pass")
     else:
         print("Certificate fetch test fail")
+    #
+    tPass = True
+    print("Logout request test:")
+    msg = testMsgr.dumpMsg(action='LO')
+    msgDict = testMsgr.loadMsg(msg)
+    tPass = tPass and msgDict['act'] == 'LO'
+    tPass = tPass and msgDict['time']
+    if tPass:
+        pCount += 1
+        print("Logout requset test pass")
+    else:
+        print("Logout requset test fail")
 
 #-----------------------------------------------------------------------------
 if __name__ == '__main__':

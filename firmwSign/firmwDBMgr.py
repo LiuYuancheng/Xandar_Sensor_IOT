@@ -20,7 +20,6 @@ RAN_LEN = 4 # defualt radar number length 4bytes.
 DB_PATH = "".join([dirpath, "\\firmwDB.db"])            # sqlite database file.
 DE_USER = ("admin", os.urandom(RAN_LEN).hex(), '123')   # defualt user.
 
-
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class firmwDBMgr(object):
@@ -61,7 +60,7 @@ class firmwDBMgr(object):
             # Add default user if needed.
             self.addUser(DE_USER)
         self.addUser(('123', os.urandom(RAN_LEN).hex(), '123'))
-        print ( self.authorizeUser('123','123'))
+        print (self.authorizeUser('123','123'))
 #-----------------------------------------------------------------------------
 
     def addUser(self, args):
