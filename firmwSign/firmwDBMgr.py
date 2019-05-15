@@ -104,9 +104,13 @@ class firmwDBMgr(object):
         return False
 
 #-----------------------------------------------------------------------------
-    def authorizeSensor(self, signature ,seId, seType, seFwVersion, time):
+    def authorizeSensor(self, args):
+        """ Authorize whether a sensor has been registered."""
+        if len(args) != 5:
+            print("DBmgr: Sensor register parameter missing %s" %str(args))
+            return False
+        signature ,seId, seType, seFwVersion, time = args
         selectSQL = '''SELECT * FROM firmwareInfo WHERE signature=?'''
-
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         # Create a new connect as this function is called by the subthread. 
         # To avoid the error: "ProgrammingError: SQLite objects created in 

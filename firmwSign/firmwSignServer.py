@@ -310,15 +310,12 @@ class commThread(threading.Thread):
     #-----------------------------------------------------------------------------
     def handleRigster(self, sender, dataDict):
         """ handle the client connection request."""
-        result = self.dbMgr.authorizeSensor(dataDict['signStr'], dataDict['id'] ,dataDict['type'], dataDict['version'], dataDict['time'])
-        
-        if result:
-            reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('RG', 1))
-            sender.send(reply)
-        else:
-            reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('RG', 0))
-            sender.send(reply)
-    
+        args = (dataDict['signStr'], dataDict['id'],
+                dataDict['type'], dataDict['version'], dataDict['time'])
+        result = self.dbMgr.authorizeSensor(args)
+        reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('RG', result))
+        sender.send(reply)
+
 
     def handleLogout(self):
         """ handle user logout: clear all the parameters"""

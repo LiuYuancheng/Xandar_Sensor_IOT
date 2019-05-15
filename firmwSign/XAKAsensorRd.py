@@ -27,6 +27,11 @@ import firmwMsgMgr
 # TCP connection: 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 5006
+SERVER_CHOICE = {
+    "LocalDefault [127.0.0.1]"  : ('127.0.0.1', 5006),
+    "Server_1 [192.168.0.100]"  : ('192.168.0.100', 5006),
+    "Server_2 [192.168.0.101]"  : ('192.168.0.101', 5006)
+}
 
 BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
 # People counting sensor message labels
@@ -90,7 +95,12 @@ class MyFrame(wx.Frame):
             self.valueDispList.append(datalabel)
             sizer.Add(datalabel)
         
-        self.regBt = wx.Button(bgPanel, label='register to server', size=(100, 18))
+        self.serverchoice = wx.Choice(
+            bgPanel, -1, choices=list(SERVER_CHOICE.keys()), name='Server')
+        self.serverchoice.SetSelection(0)
+        sizer.Add(self.serverchoice)
+
+        self.regBt = wx.Button(bgPanel, label='Sensor registration.')
         self.regBt.Bind(wx.EVT_BUTTON, self.logtoServer)
         sizer.Add(self.regBt)
 
@@ -136,29 +146,23 @@ class MyFrame(wx.Frame):
                     val = unpack('i', data) if idx == 0 or idx == 1 else unpack(
                         '<f', data)  # get the ID and parameter number
                     self.dataList.append(val[0])
-                #for i in range(37):
-                #    data = item[i*4:i*4+4]
-                #    val = unpack('i', data) if i == 0 or i == 1 else unpack('<f',data) # get the ID and parameter number 
-                #    self.dataList.append(val[0])
         # Update the UI.
         self.senId = self.dataList[0]
         self.version = self.dataList[8]
         self.sensorType = 'XKAK_PPL_COUNT'
-        if self.active:
-            for i in range(len(self.valueDispList)): 
-                self.valueDispList[i].SetLabel(str(self.dataList[i]))
-        # Send the message to TCP server. 
-        #msg = '-'.join((str(self.dataList[0]), format(self.dataList[4], '0.2f'), format(self.dataList[27], '0.2f'))) 
-        #self.thread1.updateMsg(str(msg).encode('utf-8'))
-
-
-    #def signFirmware(self, event):
-
+        if not self.active: return
+        for i in range(len(self.valueDispList)): 
+            self.valueDispList[i].SetLabel(str(self.dataList[i]))
+ 
 #-----------------------------------------------------------------------------
     def logtoServer(self, event):
+        """ Login to the server and register the sensor."""
         try:
-            ip, port = TCP_IP, TCP_PORT
+            ServerName = self.serverchoice.GetString(
+            self.serverchoice.GetSelection())
+            ip, port = SERVER_CHOICE[ServerName]
             self.sslClient.connect((ip, port))
+            # Connect to the server. 
             connectRequest = self.msgMgr.dumpMsg(action='CR')
             self.sslClient.send(connectRequest)
             response = self.sslClient.recv(BUFFER_SIZE)                
@@ -169,27 +173,22 @@ class MyFrame(wx.Frame):
                 else:
                     return
             print("start register to server")
+            # Register the sensor.
             # Temporary hard code the sigature for test.
-            signature = '8660887dd982d9f859943deee6b55859a52731cfa9b9d64d2c304007d1c785467dcb9b1b14c06906ff122fd986b6afd78ea0dd294301511061ac758108d4dd6ee256abf4a204e0be6037eea812aebfc00ffa22932e0dea040661137afa1f6072e74be5e0b4ddca9b689c71bf54014db69c80643f3e690c0b9dbf60c1eb782c5e9bf1ef981f1e30e37310e769687682fe07226a4e0ec6ad7f4d3e1d6ac7b808ed6aa9340dd1f8ab5a6fe6e1d025109bcfd653f7471e99782c4a0b06aa260df95dcd2f14de4a1b2ba6c73181e703365975c6a71affe16c309cb3152a15b8e09a6d82298b76ff4398263c6c2b9c01a4bb3a5d5addfe172be8fd88230511b600414'
+            signature = '68660887dd982d9f859943deee6b55859a52731cfa9b9d64d2c304007d1c785467dcb9b1b14c06906ff122fd986b6afd78ea0dd294301511061ac758108d4dd6ee256abf4a204e0be6037eea812aebfc00ffa22932e0dea040661137afa1f6072e74be5e0b4ddca9b689c71bf54014db69c80643f3e690c0b9dbf60c1eb782c5e9bf1ef981f1e30e37310e769687682fe07226a4e0ec6ad7f4d3e1d6ac7b808ed6aa9340dd1f8ab5a6fe6e1d025109bcfd653f7471e99782c4a0b06aa260df95dcd2f14de4a1b2ba6c73181e703365975c6a71affe16c309cb3152a15b8e09a6d82298b76ff4398263c6c2b9c01a4bb3a5d5addfe172be8fd88230511b600414'
             data = (self.senId, self.sensorType, self.version, signature)
             datab = self.msgMgr.dumpMsg(action='RG', dataArgs = data)
-            
             self.sslClient.send(datab)
-            print("xxxxxxxx")
             response = self.sslClient.recv(BUFFER_SIZE)
             dataDict = self.msgMgr.loadMsg(response)
-            
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'RG' and dataDict['state']:
                 print("FirmwSign: The sensor is registered successfully.")
                 self.active = True
             # Logout after resigtered.
             datab = self.msgMgr.dumpMsg(action='LO')
             self.sslClient.send(datab)
-
         except:
             print("Connect to server fail.")
-        
-        pass
 
 #-----------------------------------------------------------------------------
     def OnClose(self, event):
