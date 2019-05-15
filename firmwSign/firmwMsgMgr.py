@@ -27,6 +27,7 @@ RAN_LEN = 4 # The random number/bytes length.
 # LO    - Logout requst.
 # CF    - Certificate file fetch.    
 # SR    - Signature response
+# RG    - Sensor Gateway registration. 
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -60,6 +61,8 @@ class msgMgr(object):
             datab = self._createSRmsg(dataArgs)
         elif action == 'LO':
             datab = self._createLOmsg()
+        elif action == 'RG':
+            datab = self._createRGmsg(dataArgs)
         return datab
 
 #-----------------------------------------------------------------------------
@@ -166,7 +169,7 @@ class msgMgr(object):
         """ Create a sign response message. 
         """
         if len(args) != 7:
-            print("The required message in the message list missing<%s>" %str(args))
+            print("Msgmgr: The required elemsnt in the RS message<%s>" %str(args))
             return None
         sensorId, signerId, swatt, date, typeS, versionS, signS = args
         msgDict = {
@@ -178,6 +181,23 @@ class msgMgr(object):
             "tpye"  : typeS,        # Sensor type.
             "version": versionS,    # Sensor version.
             "signStr": signS.hex()  # Signature string.
+        }
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+
+#-----------------------------------------------------------------------------
+    def _createRGmsg(self, args):
+        if len(args) != 4:
+            print("Msgmgr: The required message in RG the <%s>" %str(args))
+            return None
+        sensorId, sensorType, fwVersion, signS = args
+        if isinstance(signS, bytes): signS = signS.hex()
+        msgDict = {
+            "act"   : 'RG',     
+            "id"    : sensorId,     # sensor ID
+            "type"  : sensorType,     # Signer factory user ID.
+            "time"  : time.time(),
+            "version": fwVersion,    # Sensor version.
+            "signStr": signS # Signature string.
         }
         return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
@@ -295,6 +315,21 @@ def testCase():
         print("Logout requset test pass")
     else:
         print("Logout requset test fail")
+    # 
+    tPass = True
+    print("Sensor registoration request test:")
+    msg = testMsgr.dumpMsg(action='RG', dataArgs =(100, 'XKAK_PPL_COUNT', '1.01', 'ThisIsTheSimapleSigatureString'))
+    msgDict = testMsgr.loadMsg(msg)
+    tPass = tPass and msgDict['act'] == 'RG'
+    tPass = tPass and msgDict['id'] == 100
+    tPass = tPass and msgDict['time']
+    tPass = tPass and msgDict['type'] == 'XKAK_PPL_COUNT'
+    tPass = tPass and msgDict['signStr'] == 'ThisIsTheSimapleSigatureString'
+    if tPass:
+        pCount += 1
+        print("Sensor resigtor requset test pass")
+    else:
+        print("Sensor resigtor requset test fail")
 
 #-----------------------------------------------------------------------------
 if __name__ == '__main__':

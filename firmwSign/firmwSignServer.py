@@ -18,6 +18,7 @@ import random
 import string
 import socket
 import chilkat
+import threading
 import IOT_Att as SWATT
 import firmwDBMgr as DataBase
 import firmwMsgMgr
@@ -26,6 +27,7 @@ from OpenSSL import crypto
 # Set constants value. 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 5005
+RGTCP_PORT = 5006
 BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
 ENCODE_MODE = 'base64' # or 'hex'
 RAN_LEN = 4 # random byte length
@@ -65,6 +67,9 @@ class FirmwServ(object):
         self.msgMgr= firmwMsgMgr.msgMgr(self) # create the message manager.
         # Init the database manager. 
         self.dbMgr = DataBase.firmwDBMgr()
+        # Init the sensor register thread
+        self.rgThread = commThread(1, "Thread-1", self.dbMgr)
+        self.rgThread.start()
 
 #-----------------------------------------------------------------------------
     def checkLogin(self, userName, password):
@@ -258,6 +263,72 @@ class FirmwServ(object):
             except:
                 print("MainLoop: main loop error.")
                 continue
+
+class commThread(threading.Thread):
+    """ Add the TCP thread here: 
+    """ 
+    def __init__(self, threadID, name, dbMgr):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.dbMgr = dbMgr # get the db manager from the server. 
+        self.sslServer = SSLS.TLS_sslServer(self) # changed to ssl client
+        self.sslServer.serverSet(port = RGTCP_PORT, listen=1, block=1 )
+        self.tcpServer = self.sslServer
+        self.msgMgr= firmwMsgMgr.msgMgr(self) # create the message manager.
+        print("Register thread init.")
+
+    #-----------------------------------------------------------------------------
+    def run(self):
+        """ main server loop to handle the user's requst. """
+        terminate = False
+        while not terminate:
+            # Add the reconnection handling
+            try:
+                conn, addr = self.tcpServer.accept()
+                print('RGConnection: connection address:<%s>' %str(addr))
+                while not terminate:
+                    data = conn.recv(BUFFER_SIZE)
+                    if not data: break # get the ending message. 
+                    print("Connection: received data:<%s>" %str(data))
+                    dataDict = self.msgMgr.loadMsg(data)
+                    # print(dataDict)
+                    if dataDict['act'] == 'CR':
+                        self.handleConnection(conn, dataDict)
+                    elif dataDict['act'] == 'RG':
+                        self.handleRigster(conn, dataDict)
+                    elif dataDict['act'] == 'LO':
+                        self.handleLogout()
+                        break
+                    else:
+                        continue
+            except:
+                print("RGConnection: main loop error.")
+                continue
+
+    #handleRigster
+    #-----------------------------------------------------------------------------
+    def handleRigster(self, sender, dataDict):
+        """ handle the client connection request."""
+        result = self.dbMgr.authorizeSensor(dataDict['signStr'], dataDict['id'] ,dataDict['type'], dataDict['version'], dataDict['time'])
+        
+        if result:
+            reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('RG', 1))
+            sender.send(reply)
+        else:
+            reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('RG', 0))
+            sender.send(reply)
+    
+
+    def handleLogout(self):
+        """ handle user logout: clear all the parameters"""
+        print("RGConnection: sensor logout.")
+
+    #-----------------------------------------------------------------------------
+    def handleConnection(self, sender, dataDict):
+        """ handle the client connection request."""
+        reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('CR', 1))
+        sender.send(reply)
 
 #-----------------------------------------------------------------------------
 def startServ():

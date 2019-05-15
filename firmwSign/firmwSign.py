@@ -39,7 +39,7 @@ SERVER_CHOICE = {
 }
 # 
 BUFFER_SIZE = 1024  # TCP buffer size.
-SENSOR_ID   = 100   # defualt sernsor ID for test.
+SENSOR_ID   = 203   # defualt sernsor ID for test.
 SIGNER_ID   = 200   # defualt signer user ID.
 ENCODE_MODE = 'base64' # Sign encode mode.
 RSA_UNLOCK  = "Anything for 30-day trial"
@@ -335,9 +335,9 @@ class FirmwareSignTool(wx.Frame):
         sensor_id = str(SENSOR_ID)
         signer_id = str(SIGNER_ID)
         swatt_str = self.getSWATThash(self.firmwarePath)
-        date_str = str(datetime.now())
+        date_str = str(time.time())#str(datetime.now())
         sensor_type = 'XKAK_PPL_COUNT'
-        version = '1.01'
+        version = '30015.0'
         combinStr = ''.join([sensor_id, signer_id,swatt_str, date_str, sensor_type, version])
         #signature = self.getEncryptedStr(combinStr)
         signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
