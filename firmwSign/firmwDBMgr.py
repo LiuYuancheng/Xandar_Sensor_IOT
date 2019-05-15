@@ -26,13 +26,14 @@ class firmwDBMgr(object):
     """ firmware Sign system dataBase manager. 
     """
     def __init__(self):
-        """ Check whether the data base has been created and connect to DB+table if needed.
+        """ Check whether the data base has been created and connect to DB+table
+            if needed.
         """
         self.sql_firwareInfo_table = None
         self.sql_user_table = None
         if not os.path.exists(DB_PATH):
-            print("Data base file is missing, create new data base file")
-            # Table to save the data.
+            print("DBmgr: Data base file is missing, create new data base file")
+            # Table to save the firmware sign data.
             self.sql_firwareInfo_table = """CREATE TABLE IF NOT EXISTS firmwareInfo (
                                 id integer PRIMARY KEY,
                                 sensorID integer NOT NULL,
@@ -45,13 +46,13 @@ class firmwDBMgr(object):
                                 certPath text NOT NULL,
                                 signature text NOT NULL
                             );"""
-
+            # Table to save the user name and password.
             self.sql_user_table = """ CREATE TABLE IF NOT EXISTS userInFo(
                                 user text PRIMARY KEY,
                                 salt text NOT NULL,
                                 pwdHash text NOT NULL
                             );"""
-
+        # Connect to database.
         self.conn = self.createConnection(DB_PATH)
         # create the table if the BD is first time created one.
         if self.sql_firwareInfo_table and self.conn:
@@ -59,13 +60,13 @@ class firmwDBMgr(object):
             self.createTable(self.sql_user_table)
             # Add default user if needed.
             self.addUser(DE_USER)
+        # Test whether the user is in database.
         self.addUser(('123', os.urandom(RAN_LEN).hex(), '123'))
         print (self.authorizeUser('123','123'))
-#-----------------------------------------------------------------------------
 
+#-----------------------------------------------------------------------------
     def addUser(self, args):
-        """ Add a not exist user and password in the DB.
-        """
+        """ Add a not exist user and password in the DB. """
         user, salt, pwd = args
         pwdhash = hashlib.sha256(bytes.fromhex(salt) + str(pwd).encode('utf-8')).hexdigest()
         # Check wether user in the DB already:
@@ -75,10 +76,9 @@ class firmwDBMgr(object):
             cur.execute(selectSQL, (str(user),))
             rows = cur.fetchall()
             if len(rows):
-                print("The user %s is exists" % str(user))
+                print("DBmgr: The user %s is exists" % str(user))
                 return False
-
-        print("Add user %s in to the data base" % str(user))
+        print("DBmgr: Add user %s in to the data base" % str(user))
         sql = ''' INSERT INTO userInFo(user, salt, pwdHash)
                 VALUES(?,?,?) '''
         with self.conn:
@@ -88,42 +88,37 @@ class firmwDBMgr(object):
 
 #-----------------------------------------------------------------------------
     def authorizeUser(self, user, pwd):
-        """ Authorize user and password 
-        """
+        """ Authorize user and password. """
         # Check wether user in the DB already:
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(selectSQL, (str(user),))
             rows = cur.fetchall()
-            if len(rows) == 0:
-                return False
+            if len(rows) == 0: return False
             for row in rows:
                 user, salt, pwdhash = row
                 if pwdhash == hashlib.sha256(bytes.fromhex(salt) + str(pwd).encode('utf-8')).hexdigest():
                     return True
-                else:
-                    return False
-            return False
+                return False
+        return False
 
 #-----------------------------------------------------------------------------
     def checkUser(self, userName):
-        """ Check whehter the user is in the data base.
-        """
+        """ Check whehter the user is in the data base. """
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(selectSQL, (str(userName),))
             rows = cur.fetchall()
             if len(rows):
-                print("The user %s is exists" % str(userName))
+                print("DBmgr: The user %s is exists" % str(userName))
                 return True
         return False
 
 #-----------------------------------------------------------------------------
     def createTable(self, create_table_sql):
-        """ Create a table
-        """
+        """ Create a table base on the input sql requst."""
         try:
             with self.conn:
                 cursor = self.conn.cursor()
@@ -135,27 +130,29 @@ class firmwDBMgr(object):
     def createConnection(self, db_file):
         """ create a database connection to a SQLite database """
         try:
-            conn = sqlite3.connect(db_file)
-            return conn
+            return sqlite3.connect(db_file)
         except Error as e:
             print(e)
+            return None
 
 #-----------------------------------------------------------------------------
     def createFmSignRcd(self, rcdArgs):
+        """ Create a firmware sign record in the data base."""
         if len(rcdArgs) != 9: 
-            print("The firmware sign inforamtion <%s> element missing." %str(rcdArgs))
-
+            print("DBmgr: The firmware sign inforamtion <%s> element missing." %str(rcdArgs))
+        # Insert sql request.
         sql = ''' INSERT INTO firmwareInfo( sensorID, signerID,challenge, swatt, date, type, version, certPath, signature)
                 VALUES(?,?,?,?,?,?,?,?,?) '''
         #rcdArgs = ( 203, 'default challenge', '0x1245', '2015-01-01', 'XKAK_PPL_COUNT', '1.01')
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(sql, rcdArgs)
-            print("This is the cursir UD: %s" %str(cur.lastrowid))
+            print("DBmgr: This is the cursir UD: %s" %str(cur.lastrowid))
             return cur.lastrowid
    
 #-----------------------------------------------------------------------------
     def updateRecd(self,rcd):
+        """ Udate the firware sign recode(currently not used)"""
         sql = ''' UPDATE firmwareInfo
                 SET sensorID = ? ,
                     challenge = ? ,

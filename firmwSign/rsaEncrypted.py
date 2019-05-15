@@ -38,9 +38,7 @@ rsaEncryptor = chilkat.CkRsa()
 #  to encode the encrypted bytes in a printable string.
 #  Our choices are "hex", "base64", "url", "quoted-printable".
 rsaEncryptor.put_EncodingMode("hex")
-print("xxxxxxx")
 print(publicKey)
-print("xxxxxxx")
 #  We'll encrypt with the public key and decrypt with the private
 #  key.  It's also possible to do the reverse.
 success = rsaEncryptor.ImportPublicKey(publicKey)
