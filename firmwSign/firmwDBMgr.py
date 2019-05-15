@@ -104,6 +104,27 @@ class firmwDBMgr(object):
         return False
 
 #-----------------------------------------------------------------------------
+    def authorizeSensor(self, signature ,seId, seType, seFwVersion, time):
+        selectSQL = '''SELECT * FROM firmwareInfo WHERE signature=?'''
+
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        # Create a new connect as this function is called by the subthread. 
+        # To avoid the error: "ProgrammingError: SQLite objects created in 
+        # a thread can only be used in that same thread"  
+        with conn:
+            cur = conn.cursor()
+            cur.execute(selectSQL, (signature,))
+            rows = cur.fetchall()
+            if len(rows):
+                print("DBmgr: find the sensor signature")
+                for row in rows: 
+                    if seId == row[1] and seType == row[6] and str(seFwVersion) == row[7]:
+                        return True
+                    else:
+                        return False
+        return False
+
+#-----------------------------------------------------------------------------
     def checkUser(self, userName):
         """ Check whehter the user is in the data base. """
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
