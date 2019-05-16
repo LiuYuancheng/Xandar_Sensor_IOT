@@ -93,7 +93,7 @@ class MyFrame(wx.Frame):
         self.thread1.start()
         # Init the serial reader
         #self.ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=1)
-        self.ser = serial.Serial('COM6', 115200, 8, 'N', 1, timeout=1)
+        self.ser = serial.Serial('COM3', 115200, 8, 'N', 1, timeout=1)
         self.dataList = []
         self.floatDataNum = 0
         self.ledtg = 0
@@ -192,6 +192,7 @@ class commThread(threading.Thread):
         self.terminate = False
         self.conn = None
         self.msg = b"test message"
+        print("--Init the comm thread")
         # Init the TCP server
         try:
             self.tcpSer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
