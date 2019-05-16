@@ -34,13 +34,13 @@ RAN_LEN = 4 # random byte length
 
 dirpath = os.getcwd()
 print("Server current directory is :%s" %dirpath)
-
-CERT_PATH = "".join([dirpath, "\\publickey.cer"])
-PRI_PATH = "".join( [dirpath, "\\privatekey.pem"])
-DEFUALT_FW= "".join([dirpath, "\\firmwareSample"])
+# SSL communication use
+CERT_PATH = "".join([dirpath, "\\firmwSign\\publickey.cer"])
+PRI_PATH = "".join( [dirpath, "\\firmwSign\\privatekey.pem"])
+DEFUALT_FW= "".join([dirpath, "\\firmwSign\\firmwareSample"])
 # SHA-256 sign used
-SCERT_PATH = "".join([dirpath, "\\certificate.pem"])
-SPRIV_PATH = "".join([dirpath, "\\private_key.pem"])
+SCERT_PATH = "".join([dirpath, "\\firmwSign\\certificate.pem"])
+SPRIV_PATH = "".join([dirpath, "\\firmwSign\\private_key.pem"])
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------

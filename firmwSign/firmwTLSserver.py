@@ -17,9 +17,9 @@ from OpenSSL import SSL, crypto
 
 dirpath = os.getcwd()
 print("Current working directory is : %s" %dirpath)
-CA_PATH = "".join([dirpath, "\\testCert\\CA.cert"])
-PRIK_PATH = "".join([dirpath, "\\testCert\\server.pkey"])
-CERT_PATH = "".join([dirpath, "\\testCert\\server.cert"])
+CA_PATH = "".join([dirpath, "\\firmwSign\\testCert\\CA.cert"])
+PRIK_PATH = "".join([dirpath, "\\firmwSign\\testCert\\server.pkey"])
+CERT_PATH = "".join([dirpath, "\\firmwSign\\testCert\\server.cert"])
 LOCAL_PORT = 5005
 LISTEN_NUM = 1 # how many client we can handle at same time.
 

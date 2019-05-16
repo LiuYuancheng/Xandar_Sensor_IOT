@@ -17,7 +17,7 @@ from sqlite3 import Error
 
 dirpath = os.getcwd()
 RAN_LEN = 4 # defualt radar number length 4bytes.
-DB_PATH = "".join([dirpath, "\\firmwDB.db"])            # sqlite database file.
+DB_PATH = "".join([dirpath, "\\firmwSign\\firmwDB.db"])            # sqlite database file.
 DE_USER = ("admin", os.urandom(RAN_LEN).hex(), '123')   # defualt user.
 
 #-----------------------------------------------------------------------------
