@@ -222,9 +222,9 @@ def testCase():
     tPass = tPass and msgDict['act'] == 'CR'
     tPass = tPass and 'time' in msgDict.keys()
     if tPass:
-        pCount += 1
         print("Connection request test pass")
     else:
+        pCount += 1
         print("Connection request test fail")
     #
     tPass = True
@@ -235,9 +235,9 @@ def testCase():
     tPass = tPass and msgDict['lAct'] == 'HB'
     tPass = tPass and msgDict['state'] == 1
     if tPass:
-        pCount += 1
         print("HeartBeat request test pass")
     else:
+        pCount += 1
         print("HeartBeat request test fail")
     #
     tPass = True
@@ -248,9 +248,9 @@ def testCase():
     tPass = tPass and msgDict['user'] == 'user'
     tPass = tPass and val.hex() == msgDict['random1']
     if tPass:
-        pCount += 1
         print("Login user request test pass")
     else:
+        pCount += 1
         print("Login user request test fail")
     # 
     tPass = True
@@ -261,9 +261,9 @@ def testCase():
     tPass = tPass and msgDict['random2'] == '1234'
     tPass = tPass and msgDict['password'] == 'password'
     if tPass:
-        pCount += 1
         print("Login password request test pass")
     else:
+        pCount += 1
         print("Login password request test fail")
     # 
     tPass = True
@@ -275,9 +275,9 @@ def testCase():
     tPass = tPass and msgDict['random1'] == '1234'
     tPass = tPass and msgDict['random2'] == val.hex()
     if tPass:
-        pCount += 1
         print("Login user response test pass")
     else:
+        pCount += 1
         print("Login suer response test fail")
     #
     tPass = True
@@ -287,9 +287,9 @@ def testCase():
     tPass = tPass and msgDict['act'] == 'LR2'
     tPass = tPass and msgDict['challenge'] == 'challenge'
     if tPass:
-        pCount += 1
         print("Login password response test pass")
     else:
+        pCount += 1
         print("Login password response test fail")
     #
     tPass = True
@@ -299,9 +299,9 @@ def testCase():
     tPass = tPass and msgDict['act'] == 'CF'
     tPass = tPass and msgDict['time']
     if tPass:
-        pCount += 1
         print("Certificate fetch test pass")
     else:
+        pCount += 1
         print("Certificate fetch test fail")
     #
     tPass = True
@@ -311,9 +311,9 @@ def testCase():
     tPass = tPass and msgDict['act'] == 'LO'
     tPass = tPass and msgDict['time']
     if tPass:
-        pCount += 1
         print("Logout requset test pass")
     else:
+        pCount += 1
         print("Logout requset test fail")
     # 
     tPass = True
@@ -326,10 +326,13 @@ def testCase():
     tPass = tPass and msgDict['type'] == 'XKAK_PPL_COUNT'
     tPass = tPass and msgDict['signStr'] == 'ThisIsTheSimapleSigatureString'
     if tPass:
-        pCount += 1
         print("Sensor resigtor requset test pass")
     else:
+        pCount += 1
         print("Sensor resigtor requset test fail")
+
+    print("Test done total <%s> fail" %str(pCount))
+
 
 #-----------------------------------------------------------------------------
 if __name__ == '__main__':

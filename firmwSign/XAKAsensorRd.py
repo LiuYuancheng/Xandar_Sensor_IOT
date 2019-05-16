@@ -20,7 +20,6 @@ import time
 import serial, string
 from struct import *
 import threading
-import socket
 from functools import partial
 import firmwTLSclient as SSLC
 import firmwMsgMgr

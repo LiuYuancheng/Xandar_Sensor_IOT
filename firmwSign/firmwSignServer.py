@@ -68,7 +68,7 @@ class FirmwServ(object):
         # Init the database manager. 
         self.dbMgr = DataBase.firmwDBMgr()
         # Init the sensor register thread
-        self.rgThread = commThread(1, "Thread-1", self.dbMgr)
+        self.rgThread = commThread(1, "RG_response_thread", self.dbMgr)
         self.rgThread.start()
 
 #-----------------------------------------------------------------------------
@@ -264,19 +264,20 @@ class FirmwServ(object):
                 print("MainLoop: main loop error.")
                 continue
 
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 class commThread(threading.Thread):
-    """ Add the TCP thread here: 
-    """ 
+    """ Thread to opena SSL channel for the sensor registration function.""" 
     def __init__(self, threadID, name, dbMgr):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
         self.dbMgr = dbMgr # get the db manager from the server. 
-        self.sslServer = SSLS.TLS_sslServer(self) # changed to ssl client
+        self.sslServer = SSLS.TLS_sslServer(self) # init ssl client.
         self.sslServer.serverSet(port = RGTCP_PORT, listen=1, block=1 )
         self.tcpServer = self.sslServer
         self.msgMgr= firmwMsgMgr.msgMgr(self) # create the message manager.
-        print("Register thread init.")
+        print("Register:  Thread init.")
 
     #-----------------------------------------------------------------------------
     def run(self):
@@ -306,7 +307,6 @@ class commThread(threading.Thread):
                 print("RGConnection: main loop error.")
                 continue
 
-    #handleRigster
     #-----------------------------------------------------------------------------
     def handleRigster(self, sender, dataDict):
         """ handle the client connection request."""
@@ -315,8 +315,7 @@ class commThread(threading.Thread):
         result = self.dbMgr.authorizeSensor(args)
         reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('RG', result))
         sender.send(reply)
-
-
+    #-----------------------------------------------------------------------------
     def handleLogout(self):
         """ handle user logout: clear all the parameters"""
         print("RGConnection: sensor logout.")
