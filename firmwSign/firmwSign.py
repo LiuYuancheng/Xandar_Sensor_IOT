@@ -26,34 +26,14 @@ import chilkat # need to pip install this lib.
 import IOT_Att as SWATT
 import firmwMsgMgr
 import firmwTLSclient as SSLC
+import firmwGlobal as gv
 from functools import partial
 from datetime import datetime
 from OpenSSL import crypto
 
 pyVersionStr = str(platform.python_version())
-# TCP Server ip + port list:
-SERVER_CHOICE = {
-    "LocalDefault [127.0.0.1]"  : ('127.0.0.1', 5005),
-    "Server_1 [192.168.0.100]"  : ('192.168.0.100', 5005),
-    "Server_2 [192.168.0.101]"  : ('192.168.0.101', 5005)
-}
-# 
-BUFFER_SIZE = 1024  # TCP buffer size.
 SENSOR_ID   = 203   # defualt sernsor ID for test.
 SIGNER_ID   = 200   # defualt signer user ID.
-ENCODE_MODE = 'base64' # Sign encode mode.
-RSA_UNLOCK  = "Anything for 30-day trial"
-SWATT_ITER  = 300 # Swatt calculation iteration count.
-RAN_LEN     = 4 # random byte length
-
-dirpath = os.getcwd()
-print("Client current working directory is : %s" %dirpath)
-
-CER_PATH = "".join([dirpath, "\\firmwSign\\receivered.cer"])
-SCER_PATH = "".join([dirpath, "\\firmwSign\\receivered.pem"]) # Certificate path userd to sign the data. 
-DEFUALT_FW = "".join([dirpath, "\\firmwSign\\firmwareSample"])
-
-PRIK_PATH = "".join([dirpath, "\\firmwSign\\testCert\\client.pkey"])
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -73,16 +53,16 @@ class FirmwareSignTool(wx.Frame):
         self.ownRandom = None   # login random1
         self.serRandom = None   # random2 given by server.
         self.priv_key = None    # sign pricate key.
-        self.firmwarePath = DEFUALT_FW
+        self.firmwarePath = gv.DEFUALT_FW
         # init the SWATT calculator. 
         self.swattHd = SWATT.swattCal()
         self.swattChaStr = 'Default Challenge String'
         # Create the RSA encrypter
         self.rsaEncryptor = chilkat.CkRsa()
-        if not self.rsaEncryptor.UnlockComponent(RSA_UNLOCK):
+        if not self.rsaEncryptor.UnlockComponent(gv.RSA_UNLOCK):
             print("RsaEncryptor: RSA component unlock failed.")
             sys.exit()
-        self.rsaEncryptor.put_EncodingMode(ENCODE_MODE)
+        self.rsaEncryptor.put_EncodingMode(gv.RSA_ENCODE_MODE)
         # Init the UI here.
         self.hidenWidgetList = []
         mainUISizer = self.buildUISizer()
@@ -105,7 +85,7 @@ class FirmwareSignTool(wx.Frame):
         hbox_1.Add(wx.StaticText(self, label='Server Selection: '),
                    flag=flagsR, border=2)
         self.serverchoice = wx.Choice(
-            self, -1, choices=list(SERVER_CHOICE.keys()), name='Server')
+            self, -1, choices=list(gv.SI_SERVER_CHOICE.keys()), name='Server')
         self.serverchoice.SetSelection(0)
         hbox_1.Add(self.serverchoice, flag=flagsR, border=2)
         self.connectBt = wx.Button(self, label='Connect', size=(70, 24))
@@ -179,7 +159,7 @@ class FirmwareSignTool(wx.Frame):
         """ Connect to the server(ip, port) based on users selection. """
         ServerName = self.serverchoice.GetString(
             self.serverchoice.GetSelection())
-        ip, port = SERVER_CHOICE[ServerName]
+        ip, port = gv.SI_SERVER_CHOICE[ServerName]
         try:
             response = None
             if not self.sslClient:
@@ -190,7 +170,7 @@ class FirmwareSignTool(wx.Frame):
             # Connect to server.
             connectRequest = self.msgMgr.dumpMsg(action='CR')
             self.tcpClient.send(connectRequest)
-            response = self.tcpClient.recv(BUFFER_SIZE)                
+            response = self.tcpClient.recv(gv.BUFFER_SIZE)                
             dataDict = self.msgMgr.loadMsg(response)
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'CR':
                 if dataDict['state']:
@@ -209,11 +189,11 @@ class FirmwareSignTool(wx.Frame):
     def fetchKeyFromServer(self):
         """ Send the private key file fetch request. """
         self.tcpClient.send(self.msgMgr.dumpMsg(action='CF'))
-        response = self.tcpClient.recv(BUFFER_SIZE*4)
+        response = self.tcpClient.recv(gv.BUFFER_SIZE*4)
         data = self.msgMgr.loadMsg(response)
         # here we assument the file not more than 4K
         if self.saveCert:
-            with open(SCER_PATH, "wb") as fh:
+            with open(gv.RECV_PRIK_PATH, "wb") as fh:
                 fh.write(data)
         else:
             self.bIOhandler = chilkat.CkBinData()
@@ -233,7 +213,7 @@ class FirmwareSignTool(wx.Frame):
 #-----------------------------------------------------------------------------
     def getSWATThash(self, fname):
         """ Get the file SWATT hash """
-        response = self.swattHd.getSWATT(self.swattChaStr, SWATT_ITER, fname)
+        response = self.swattHd.getSWATT(self.swattChaStr, gv.SWATT_ITER, fname)
         return response
 
 #-----------------------------------------------------------------------------
@@ -257,12 +237,12 @@ class FirmwareSignTool(wx.Frame):
         """ Load the certificate file and get the public key for signing the 
             firmware. 
         """
-        if self.saveCert and not os.path.exists(CER_PATH):
+        if self.saveCert and not os.path.exists(gv.RECV_CERT_PATH):
             print("The certificate file is not exist")
             return None
         cert = chilkat.CkCert()
         success = cert.LoadFromFile(
-            CER_PATH) if self.saveCert else cert.LoadFromBd(self.bIOhandler)
+            gv.RECV_CERT_PATH) if self.saveCert else cert.LoadFromBd(self.bIOhandler)
         if not success:
             print(cert.lastErrorText())
             return None
@@ -289,7 +269,7 @@ class FirmwareSignTool(wx.Frame):
         datab, self.ownRandom = self.msgMgr.dumpMsg(
             action='LI1', dataArgs=user)
         self.tcpClient.send(datab)
-        response = self.tcpClient.recv(BUFFER_SIZE)
+        response = self.tcpClient.recv(gv.BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB':
             if dataDict['lAct'] == 'LI1' and not dataDict['state']:
@@ -301,7 +281,7 @@ class FirmwareSignTool(wx.Frame):
                     datab = self.msgMgr.dumpMsg(
                         action='LI2', dataArgs=(dataDict['random2'], pwd))
                     self.tcpClient.send(datab)
-                    response = self.tcpClient.recv(BUFFER_SIZE)
+                    response = self.tcpClient.recv(gv.BUFFER_SIZE)
                     dataDict = self.msgMgr.loadMsg(response)
                     if dataDict['act'] == 'LR2':
                         self.swattChaStr = dataDict['challenge']
@@ -334,7 +314,7 @@ class FirmwareSignTool(wx.Frame):
         """
         print("FirmwSign: starting sign the firmware")
         #self.loadCert()
-        self.loadPrivateK(PRIK_PATH)
+        self.loadPrivateK(gv.CSSL_PRIK_PATH)
         sensor_id = str(SENSOR_ID)
         signer_id = str(SIGNER_ID)
         swatt_str = self.getSWATThash(self.firmwarePath)
@@ -346,9 +326,8 @@ class FirmwareSignTool(wx.Frame):
         signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
         datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, SIGNER_ID,swatt_str, date_str, sensor_type, version, signature))
         self.tcpClient.send(datab)
-        response = self.tcpClient.recv(BUFFER_SIZE)
+        response = self.tcpClient.recv(gv.BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
-        print(dataDict)
         if dataDict['act'] == 'HB' and dataDict['lAct'] and dataDict['state']:
             print("FirmwSign: The firmware is signed successfully.")
 
@@ -360,7 +339,7 @@ class FirmwareSignTool(wx.Frame):
         self.fetchKeyFromServer()
         print("FirmwSign: starting sign the firmware")
         #self.loadCert()
-        self.loadPrivateK(SCER_PATH)
+        self.loadPrivateK(gv.RECV_PRIK_PATH)
         sensor_id = str(SENSOR_ID)
         signer_id = str(SIGNER_ID)
         swatt_str = self.getSWATThash(self.firmwarePath)
@@ -372,7 +351,7 @@ class FirmwareSignTool(wx.Frame):
         signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
         datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, SIGNER_ID,swatt_str, date_str, sensor_type, version, signature))
         self.tcpClient.send(datab)
-        response = self.tcpClient.recv(BUFFER_SIZE)
+        response = self.tcpClient.recv(gv.BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB' and dataDict['lAct']:
             print("FirmwSign: The firmware is signed successfully.")

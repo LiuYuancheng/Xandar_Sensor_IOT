@@ -23,26 +23,8 @@ import IOT_Att as SWATT
 import firmwDBMgr as DataBase
 import firmwMsgMgr
 import firmwTLSserver as SSLS
+import firmwGlobal as gv
 from OpenSSL import crypto
-# Set constants value. 
-TCP_IP = '127.0.0.1'
-TCP_PORT = 5005
-RGTCP_PORT = 5006
-BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
-ENCODE_MODE = 'base64' # or 'hex'
-RAN_LEN = 4 # random byte length
-
-dirpath = os.getcwd()
-print("Server current directory is :%s" %dirpath)
-# SSL communication use
-CERT_PATH = "".join([dirpath, "\\firmwSign\\publickey.cer"])
-PRI_PATH = "".join( [dirpath, "\\firmwSign\\privatekey.pem"])
-DEFUALT_FW= "".join([dirpath, "\\firmwSign\\firmwareSample"])
-# SHA-256 sign used
-SCERT_PATH = "".join([dirpath, "\\firmwSign\\certificate.pem"])
-SPRIV_PATH = "".join([dirpath, "\\firmwSign\\private_key.pem"])
-
-SSLCERT_PATH = "".join([dirpath, "\\firmwSign\\testCert\\client.cert"])
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -57,9 +39,9 @@ class FirmwServ(object):
         self.priv_key = None
         self.responseEpc = None # expect response of the firmware file.
         self.ranStr = "" # random string used for Swatt challenge set.
-        self.rsaDecryptor = self.initDecoder(Mode='RSA')
+        #self.rsaDecryptor = self.initDecoder(Mode='RSA')
         self.sslServer = SSLS.TLS_sslServer(self) # changed to ssl client
-        self.sslServer.serverSet(port = TCP_PORT, listen=1, block=1 )
+        self.sslServer.serverSet(port = gv.SITCP_PORT, listen=1, block=1 )
         # Init the communication server.
         self.tcpServer = self.initTCPServ() if self.sslServer is None else self.sslServer
         # Init the sign cert verifier.
@@ -98,7 +80,7 @@ class FirmwServ(object):
 #-----------------------------------------------------------------------------
     def handleCertFetch(self, sender, dataDict):
         """handle the certificate fetch request."""
-        f_send = SPRIV_PATH
+        f_send = gv.SIGN_PRIV_PATH
         # f_send = "publickey.cer" # use the RSA file.
         with open(f_send, "rb") as f:
             reply = self.msgMgr.dumpMsg(action='FL', dataArgs=f.read())
@@ -159,15 +141,14 @@ class FirmwServ(object):
         print("SingVerify: This is the decryptioin sstr: %s" % checkStr)
 
         # Double confirm the SWATT
-        self.responseEpc = self.swattHd.getSWATT(self.ranStr, 300, DEFUALT_FW)
+        self.responseEpc = self.swattHd.getSWATT(self.ranStr, 300, gv.DEFUALT_FW)
         if dataDict['swatt'] == self.responseEpc:
             print("SingVerify: the firmware is signed successfully")
             rcdList = [int(dataDict['id']), int(dataDict['sid']), self.ranStr,
                        str(dataDict['swatt']), dataDict['date'], dataDict['tpye'],
-                       dataDict['version'], SCERT_PATH, dataDict['signStr']]
-
-            self.loadPrivateK(SPRIV_PATH)
-            dataStr = ''.join([str(n for n in rcdList)]).encode('utf-8')
+                       dataDict['version'], gv.SIGN_CERT_PATH, dataDict['signStr']]
+            self.loadPrivateK(gv.SIGN_PRIV_PATH)
+            dataStr = ''.join([str(n) for n in rcdList]).encode('utf-8')
             signatureServer = crypto.sign(self.priv_key, dataStr, 'sha256')
             rcdList.append(signatureServer.hex())
             self.dbMgr.createFmSignRcd(rcdList)
@@ -183,7 +164,7 @@ class FirmwServ(object):
         """ load pricate key from the sertificate file.
         """
         if not os.path.exists(keyPath):
-            print("The private file is not exist")
+            print("The private key file used to sign input is not exist")
         with open(keyPath, 'rb') as f:
             self.priv_key = crypto.load_privatekey(
                 crypto.FILETYPE_PEM, f.read())
@@ -200,12 +181,12 @@ class FirmwServ(object):
                 print("Decoder: RSA component unlock failed")
                 return None
             privKey = chilkat.CkPrivateKey()
-            success = privKey.LoadPemFile(PRI_PATH)
+            success = privKey.LoadPemFile(gv.RSA_PRI_PATH)
             if not success:
                 print(privKey.lastErrorText())
                 return None
             print("Decoder: private Key from DER: \n" + privKey.getXml())
-            rsaDecryptor.put_EncodingMode(ENCODE_MODE)
+            rsaDecryptor.put_EncodingMode(gv.RSA_ENCODE_MODE)
             # import private key
             success = rsaDecryptor.ImportPrivateKey(privKey.getXml())
             if not success:
@@ -219,7 +200,7 @@ class FirmwServ(object):
         try:
             # Create the TCP server 
             tcpSer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            tcpSer.bind((TCP_IP, TCP_PORT))
+            tcpSer.bind((gv.LOCAL_IP, gv.SITCP_PORT))
             tcpSer.listen(1)
             return tcpSer
         except:
@@ -229,7 +210,7 @@ class FirmwServ(object):
 #-----------------------------------------------------------------------------
     def initVerifier(self):
         """Init the cerfiticate verifier."""
-        with open(SSLCERT_PATH,'rb') as f:
+        with open(gv.CSSL_CERT_PATH,'rb') as f:
             self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
         print("Sign: Locaded the sign certificate file.")
 
@@ -259,11 +240,10 @@ class FirmwServ(object):
                 conn, addr = self.tcpServer.accept()
                 print('Connection: connection address:<%s>' %str(addr))
                 while not terminate:
-                    data = conn.recv(BUFFER_SIZE)
+                    data = conn.recv(gv.BUFFER_SIZE)
                     if not data: break # get the ending message. 
                     print("Connection: received data:<%s>" %str(data))
                     dataDict = self.msgMgr.loadMsg(data)
-                    # print(dataDict)
                     if dataDict['act'] == 'CR':
                         self.handleConnection(conn, dataDict)
                     elif dataDict['act'] == 'LI1':
@@ -293,7 +273,7 @@ class commThread(threading.Thread):
         self.name = name
         self.dbMgr = dbMgr # get the db manager from the server. 
         self.sslServer = SSLS.TLS_sslServer(self) # init ssl client.
-        self.sslServer.serverSet(port = RGTCP_PORT, listen=1, block=1 )
+        self.sslServer.serverSet(port = gv.RGTCP_PORT, listen=1, block=1 )
         self.tcpServer = self.sslServer
         self.msgMgr= firmwMsgMgr.msgMgr(self) # create the message manager.
         print("Register:  Thread init.")
@@ -308,9 +288,9 @@ class commThread(threading.Thread):
                 conn, addr = self.tcpServer.accept()
                 print('RGConnection: connection address:<%s>' %str(addr))
                 while not terminate:
-                    data = conn.recv(BUFFER_SIZE)
+                    data = conn.recv(gv.BUFFER_SIZE)
                     if not data: break # get the ending message. 
-                    print("Connection: received data:<%s>" %str(data))
+                    print("RGConnection: received data:<%s>" %str(data))
                     dataDict = self.msgMgr.loadMsg(data)
                     # print(dataDict)
                     if dataDict['act'] == 'CR':

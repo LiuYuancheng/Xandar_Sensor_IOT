@@ -14,15 +14,10 @@ import os
 import sys
 import socket
 from OpenSSL import SSL, crypto
+import firmwGlobal as gv
 
-dirpath = os.getcwd()
-print("Current working directory is : %s" %dirpath)
-CA_PATH = "".join([dirpath, "\\firmwSign\\testCert\\CA.cert"])
-PRIK_PATH = "".join([dirpath, "\\firmwSign\\testCert\\server.pkey"])
-CERT_PATH = "".join([dirpath, "\\firmwSign\\testCert\\server.cert"])
-LOCAL_PORT = 5005
+LOCAL_PORT = 5005 # Server defualt listening port.
 LISTEN_NUM = 1 # how many client we can handle at same time.
-
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class TLS_sslServer(object):
@@ -41,9 +36,9 @@ class TLS_sslServer(object):
         self.ctx.set_verify(
             SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verify_cb
         )  # Demand a certificate
-        self.ctx.use_privatekey_file(PRIK_PATH)
-        self.ctx.use_certificate_file(CERT_PATH)
-        self.ctx.load_verify_locations(CA_PATH)
+        self.ctx.use_privatekey_file(gv.SSSL_PRIK_PATH)
+        self.ctx.use_certificate_file(gv.SSSL_CERT_PATH)
+        self.ctx.load_verify_locations(gv.CA_PATH)
 
 #-----------------------------------------------------------------------------
     def accept(self):
