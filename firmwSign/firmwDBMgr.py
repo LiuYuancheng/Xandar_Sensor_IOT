@@ -14,11 +14,8 @@ import os
 import hashlib
 import sqlite3
 from sqlite3 import Error
-
-dirpath = os.getcwd()
-RAN_LEN = 4 # defualt radar number length 4bytes.
-DB_PATH = "".join([dirpath, "\\firmwSign\\firmwDB.db"])            # sqlite database file.
-DE_USER = ("admin", os.urandom(RAN_LEN).hex(), '123')   # defualt user.
+import firmwGlobal as gv
+DE_USER = ("admin", os.urandom(gv.RAN_LEN).hex(), '123')   # defualt user.
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -31,7 +28,7 @@ class firmwDBMgr(object):
         """
         self.sql_firwareInfo_table = None
         self.sql_user_table = None
-        if not os.path.exists(DB_PATH):
+        if not os.path.exists(gv.DB_PATH):
             print("DBmgr: Data base file is missing, create new data base file")
             # Table to save the firmware sign data.
             self.sql_firwareInfo_table = """CREATE TABLE IF NOT EXISTS firmwareInfo (
@@ -54,7 +51,7 @@ class firmwDBMgr(object):
                                 pwdHash text NOT NULL
                             );"""
         # Connect to database.
-        self.conn = self.createConnection(DB_PATH)
+        self.conn = self.createConnection(gv.DB_PATH)
         # create the table if the BD is first time created one.
         if self.sql_firwareInfo_table and self.conn:
             self.createTable(self.sql_firwareInfo_table)
@@ -62,7 +59,7 @@ class firmwDBMgr(object):
             # Add default user if needed.
             self.addUser(DE_USER)
         # Test whether the user is in database.
-        self.addUser(('123', os.urandom(RAN_LEN).hex(), '123'))
+        self.addUser(('123', os.urandom(gv.RAN_LEN).hex(), '123'))
         print (self.authorizeUser('123','123'))
 
 #-----------------------------------------------------------------------------
@@ -112,7 +109,7 @@ class firmwDBMgr(object):
             return False
         signature ,seId, seType, seFwVersion, time = args
         selectSQL = '''SELECT * FROM firmwareInfo WHERE signatureServer=?'''
-        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        conn = sqlite3.connect(gv.DB_PATH, check_same_thread=False)
         # Create a new connect as this function is called by the subthread. 
         # To avoid the error: "ProgrammingError: SQLite objects created in 
         # a thread can only be used in that same thread"  

@@ -10,19 +10,15 @@
 # Copyright:   YC
 # License:     YC
 #-----------------------------------------------------------------------------
+
 import os
 import sys
 import socket
 from OpenSSL import SSL, crypto
+import firmwGlobal as gv
 
-dirpath = os.getcwd()
-print("Current working directory is : %s" %dirpath)
-CA_PATH = "".join([dirpath, "\\firmwSign\\testCert\\CA.cert"])
-PRIK_PATH = "".join([dirpath, "\\firmwSign\\testCert\\client.pkey"])
-CERT_PATH = "".join([dirpath, "\\firmwSign\\testCert\\client.cert"])
-# Use Local IP and port 5005 as defualt.
+# Use Local IP and port 5005 as defualt value for test.
 LOCAL_IP = ("127.0.0.1", 5005)
-
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
@@ -38,9 +34,9 @@ class TLS_sslClient(object):
         # Demand a certificate
         self.ctx.set_verify(SSL.VERIFY_PEER, self.verify_cb)
         # load the certifcate fils.
-        self.ctx.use_privatekey_file(PRIK_PATH)
-        self.ctx.use_certificate_file(CERT_PATH)
-        self.ctx.load_verify_locations(CA_PATH)
+        self.ctx.use_privatekey_file(gv.CSSL_PRIK_PATH)
+        self.ctx.use_certificate_file(gv.CSSL_CERT_PATH)
+        self.ctx.load_verify_locations(gv.CA_PATH)
 
 #-----------------------------------------------------------------------------
     def connect(self, ipaddr):
@@ -90,7 +86,7 @@ def testCase():
     print("Send the message to server")
     for _ in range(6):
         sslClient.send(b"send test string")
-        print(sslClient.recv(1024).decode('utf-8'))
+        print(sslClient.recv(gv.BUFFER_SIZE).decode('utf-8'))
     print("Finished and stop")
     sslClient.shutdown()
     sslClient.close()

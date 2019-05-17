@@ -1,7 +1,3 @@
-
-
-
-
 from OpenSSL import crypto
 
 _k = crypto.PKey()
