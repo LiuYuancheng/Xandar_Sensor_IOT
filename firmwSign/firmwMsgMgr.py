@@ -10,13 +10,12 @@
 # Copyright:   YC
 # License:     YC
 #-----------------------------------------------------------------------------
+
 import os
 import json
 import time
+import firmwGlobal as gv
 
-CMD_TYPE = 'C'.encode('utf-8')  # cmd type message used for contorl.
-FILE_TYPE = 'F'.encode('utf-8') # file(bytes) type.
-RAN_LEN = 4 # The random number/bytes length.
 # Action type:
 # CR    - Connection request
 # HB    - Heart beat (feedback)
@@ -70,7 +69,7 @@ class msgMgr(object):
         """ Convert the dumpped message back to orignal data.
         """
         tag = msg[0:1] # Take out the tag data.
-        data = json.loads(msg[1:]) if tag == CMD_TYPE else msg[1:]
+        data = json.loads(msg[1:]) if tag == gv.CMD_TYPE else msg[1:]
         return data
 
 #-----------------------------------------------------------------------------
@@ -81,7 +80,7 @@ class msgMgr(object):
             "act"   : 'CR',
             "time"  : time.time()
         }
-        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createHBmsg(self, lastAct, state):
@@ -93,7 +92,7 @@ class msgMgr(object):
             "lAct"  : lastAct,  # last received action 
             "state" : state     # last action exe state/data
         }
-        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createLImsg(self, args=None):
@@ -104,13 +103,13 @@ class msgMgr(object):
         if args is None: return None 
         if isinstance(args, str):
             userName = args.strip()  # remove the user space.
-            randomB = os.urandom(RAN_LEN)
+            randomB = os.urandom(gv.RAN_LEN)
             msgDict = {
                 "act"   : 'LI1',
                 "user"  : str(userName),
                 "random1": randomB.hex()
             }
-            data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+            data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return (data, randomB)
         elif len(args) == 2:
             (randomB, password) = args
@@ -119,7 +118,7 @@ class msgMgr(object):
                 "random2"   : randomB,
                 "password"  : password 
             }
-            data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+            data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return data
 
 #-----------------------------------------------------------------------------
@@ -133,17 +132,17 @@ class msgMgr(object):
                 "act"       : 'LR2',
                 "challenge" : challenge,
             }
-            return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+            return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
         elif len(args) == 2:
             (randomB, state) = args
-            randomB2 = os.urandom(RAN_LEN)
+            randomB2 = os.urandom(gv.RAN_LEN)
             msgDict = {
                 "act"       : 'LR1',
                 "state"     : state,
                 "random1"   : randomB,
                 "random2"   : randomB2.hex() 
             }
-            data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+            data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
             return (data, randomB2)
 
 #-----------------------------------------------------------------------------
@@ -153,7 +152,7 @@ class msgMgr(object):
             "act"   : 'LO',
             "time"  : time.time()
         }
-        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createCFmsg(self):
@@ -163,7 +162,7 @@ class msgMgr(object):
             "act"   : 'CF',
             "time"  : time.time()
         }
-        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createSRmsg(self, args):
@@ -183,7 +182,7 @@ class msgMgr(object):
             "version": versionS,    # Sensor version.
             "signStr": signS.hex()  # Signature string.
         }
-        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createRGmsg(self, args):
@@ -200,13 +199,13 @@ class msgMgr(object):
             "version": fwVersion,    # Sensor version.
             "signStr": signS # Signature string.
         }
-        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createFLmsg(self, bytesData):
         """ Create the file message.
         """
-        return FILE_TYPE + bytesData
+        return gv.FILE_TYPE + bytesData
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -333,7 +332,6 @@ def testCase():
         print("Sensor resigtor requset test fail")
 
     print("Test done total <%s> fail" %str(pCount))
-
 
 #-----------------------------------------------------------------------------
 if __name__ == '__main__':
