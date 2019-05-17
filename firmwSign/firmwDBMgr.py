@@ -44,7 +44,8 @@ class firmwDBMgr(object):
                                 type text,
                                 version text NOT NULL,
                                 certPath text NOT NULL,
-                                signature text NOT NULL
+                                signatureClient text NOT NULL,
+                                signatureServer text NOT NULL
                             );"""
             # Table to save the user name and password.
             self.sql_user_table = """ CREATE TABLE IF NOT EXISTS userInFo(
@@ -110,7 +111,7 @@ class firmwDBMgr(object):
             print("DBmgr: Sensor register parameter missing %s" %str(args))
             return False
         signature ,seId, seType, seFwVersion, time = args
-        selectSQL = '''SELECT * FROM firmwareInfo WHERE signature=?'''
+        selectSQL = '''SELECT * FROM firmwareInfo WHERE signatureServer=?'''
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         # Create a new connect as this function is called by the subthread. 
         # To avoid the error: "ProgrammingError: SQLite objects created in 
@@ -163,11 +164,11 @@ class firmwDBMgr(object):
 #-----------------------------------------------------------------------------
     def createFmSignRcd(self, rcdArgs):
         """ Create a firmware sign record in the data base."""
-        if len(rcdArgs) != 9: 
+        if len(rcdArgs) != 10: 
             print("DBmgr: The firmware sign inforamtion <%s> element missing." %str(rcdArgs))
         # Insert sql request.
-        sql = ''' INSERT INTO firmwareInfo( sensorID, signerID,challenge, swatt, date, type, version, certPath, signature)
-                VALUES(?,?,?,?,?,?,?,?,?) '''
+        sql = ''' INSERT INTO firmwareInfo( sensorID, signerID,challenge, swatt, date, type, version, certPath, signatureClient, signatureServer)
+                VALUES(?,?,?,?,?,?,?,?,?,?) '''
         #rcdArgs = ( 203, 'default challenge', '0x1245', '2015-01-01', 'XKAK_PPL_COUNT', '1.01')
         with self.conn:
             cur = self.conn.cursor()
