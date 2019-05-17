@@ -121,7 +121,7 @@ class SensorReaderFrame(wx.Frame):
             sizer.Add(datalabel)
         # Add the server selection and regist button.
         self.serverchoice = wx.Choice(
-            bgPanel, -1, size=(190, 23), choices=list(gv.SERVER_CHOICE.keys()), name='Server')
+            bgPanel, -1, size=(190, 23), choices=list(gv.RG_SERVER_CHOICE.keys()), name='Server')
         self.serverchoice.SetSelection(0)
         sizer.Add(self.serverchoice)
         self.regBt = wx.Button(bgPanel, label='Sensor registration.', size=(190, 23))
@@ -136,7 +136,7 @@ class SensorReaderFrame(wx.Frame):
             # Connect to the selected server. 
             ServerName = self.serverchoice.GetString(
             self.serverchoice.GetSelection())
-            ip, port = gv.SERVER_CHOICE[ServerName]
+            ip, port = gv.RG_SERVER_CHOICE[ServerName]
             self.sslClient.connect((ip, port))
             # send connect request cmd.
             self.sslClient.send(self.msgMgr.dumpMsg(action='CR'))
