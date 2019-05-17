@@ -57,7 +57,7 @@ class FirmwareSignTool(wx.Frame):
         # init the SWATT calculator. 
         self.swattHd = SWATT.swattCal()
         self.swattChaStr = 'Default Challenge String'
-        # Create the RSA encrypter
+        # Create the RSA encrypter(currently not use as we switch to new design)
         self.rsaEncryptor = chilkat.CkRsa()
         if not self.rsaEncryptor.UnlockComponent(gv.RSA_UNLOCK):
             print("RsaEncryptor: RSA component unlock failed.")
