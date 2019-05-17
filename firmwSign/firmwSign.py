@@ -53,6 +53,8 @@ CER_PATH = "".join([dirpath, "\\firmwSign\\receivered.cer"])
 SCER_PATH = "".join([dirpath, "\\firmwSign\\receivered.pem"]) # Certificate path userd to sign the data. 
 DEFUALT_FW = "".join([dirpath, "\\firmwSign\\firmwareSample"])
 
+PRIK_PATH = "".join([dirpath, "\\firmwSign\\testCert\\client.pkey"])
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class FirmwareSignTool(wx.Frame):
@@ -204,8 +206,8 @@ class FirmwareSignTool(wx.Frame):
             self.tcpClient = self.sslClient = None
 
 #-----------------------------------------------------------------------------
-    def fetchCert(self):
-        """ Send the certificate file fetch request. """
+    def fetchKeyFromServer(self):
+        """ Send the private key file fetch request. """
         self.tcpClient.send(self.msgMgr.dumpMsg(action='CF'))
         response = self.tcpClient.recv(BUFFER_SIZE*4)
         data = self.msgMgr.loadMsg(response)
@@ -269,12 +271,12 @@ class FirmwareSignTool(wx.Frame):
         return success
 
 #-----------------------------------------------------------------------------
-    def loadPrivateK(self):
+    def loadPrivateK(self, keyPath):
         """ load pricate key from the sertificate file.
         """
-        if self.saveCert and not os.path.exists(SCER_PATH):
+        if self.saveCert and not os.path.exists(keyPath):
             print("The private file is not exist")
-        with open(SCER_PATH, 'rb') as f:
+        with open(keyPath, 'rb') as f:
             self.priv_key = crypto.load_privatekey(
                 crypto.FILETYPE_PEM, f.read())
 
@@ -327,11 +329,38 @@ class FirmwareSignTool(wx.Frame):
         
 #-----------------------------------------------------------------------------
     def signFirmware(self, event):
-        """ Sign the firmware file and send the data to server. """
-        self.fetchCert()
+        """ Sign the firmware file and send the data to server.(use SSL commmunication 
+            private key to sign the data sting)
+        """
         print("FirmwSign: starting sign the firmware")
         #self.loadCert()
-        self.loadPrivateK()
+        self.loadPrivateK(PRIK_PATH)
+        sensor_id = str(SENSOR_ID)
+        signer_id = str(SIGNER_ID)
+        swatt_str = self.getSWATThash(self.firmwarePath)
+        date_str = str(time.time())#str(datetime.now())
+        sensor_type = 'XKAK_PPL_COUNT'
+        version = '30015.0'
+        combinStr = ''.join([sensor_id, signer_id,swatt_str, date_str, sensor_type, version])
+        #signature = self.getEncryptedStr(combinStr)
+        signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
+        datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, SIGNER_ID,swatt_str, date_str, sensor_type, version, signature))
+        self.tcpClient.send(datab)
+        response = self.tcpClient.recv(BUFFER_SIZE)
+        dataDict = self.msgMgr.loadMsg(response)
+        print(dataDict)
+        if dataDict['act'] == 'HB' and dataDict['lAct'] and dataDict['state']:
+            print("FirmwSign: The firmware is signed successfully.")
+
+
+#-----------------------------------------------------------------------------
+    def signFirmware_(self, event):
+        """ Sign the firmware file and send the data to server.(fetch the private 
+            key from the server to sign the data string.) """
+        self.fetchKeyFromServer()
+        print("FirmwSign: starting sign the firmware")
+        #self.loadCert()
+        self.loadPrivateK(SCER_PATH)
         sensor_id = str(SENSOR_ID)
         signer_id = str(SIGNER_ID)
         swatt_str = self.getSWATThash(self.firmwarePath)
@@ -347,6 +376,7 @@ class FirmwareSignTool(wx.Frame):
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB' and dataDict['lAct']:
             print("FirmwSign: The firmware is signed successfully.")
+
 
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):

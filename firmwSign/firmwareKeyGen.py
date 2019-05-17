@@ -32,11 +32,17 @@ with open("certificate.pem",'wb') as f:
 with open("private_key.pem",'rb') as f:
     priv_key = crypto.load_privatekey(crypto.FILETYPE_PEM, f.read())
 
+#with open("firmwSign\\testCert\\client.pkey",'rb') as f:
+#    priv_key = crypto.load_privatekey(crypto.FILETYPE_PEM, f.read())
+
 with open("public_key.pem",'rb') as f:
     pub_key = crypto.load_publickey(crypto.FILETYPE_PEM, f.read())
 
 with open("certificate.pem",'rb') as f:
     cert = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
+
+#with open("firmwSign\\testCert\\client.cert",'rb') as f:
+#    cert = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
 
 # sign message 'hello world' with private key and certificate
 sign = crypto.sign(priv_key, b'hello world', 'sha256')

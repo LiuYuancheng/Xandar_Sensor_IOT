@@ -42,6 +42,8 @@ DEFUALT_FW= "".join([dirpath, "\\firmwSign\\firmwareSample"])
 SCERT_PATH = "".join([dirpath, "\\firmwSign\\certificate.pem"])
 SPRIV_PATH = "".join([dirpath, "\\firmwSign\\private_key.pem"])
 
+SSLCERT_PATH = "".join([dirpath, "\\firmwSign\\testCert\\client.cert"])
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class FirmwServ(object):
@@ -52,6 +54,7 @@ class FirmwServ(object):
         self.cert = None
         self.loginUser = None
         self.ownRandom = None
+        self.priv_key = None
         self.responseEpc = None # expect response of the firmware file.
         self.ranStr = "" # random string used for Swatt challenge set.
         self.rsaDecryptor = self.initDecoder(Mode='RSA')
@@ -150,7 +153,7 @@ class FirmwServ(object):
             if crypto.verify(self.cert, sign, checkStr.encode('utf-8'), 'sha256') is None:
                 print("SignVerify: The result is correct.")
         except:
-            print("SingVerify: The sign can not mathc the data.")
+            print("SingVerify: The sign can not metch the data.")
             sender.send(self.msgMgr.dumpMsg(action='SR', dataArgs=('LI1', 0)))
             return False
         print("SingVerify: This is the decryptioin sstr: %s" % checkStr)
@@ -159,15 +162,31 @@ class FirmwServ(object):
         self.responseEpc = self.swattHd.getSWATT(self.ranStr, 300, DEFUALT_FW)
         if dataDict['swatt'] == self.responseEpc:
             print("SingVerify: the firmware is signed successfully")
-            rcdList = (int(dataDict['id']), int(dataDict['sid']), self.ranStr,
+            rcdList = [int(dataDict['id']), int(dataDict['sid']), self.ranStr,
                        str(dataDict['swatt']), dataDict['date'], dataDict['tpye'],
-                       dataDict['version'], SCERT_PATH, dataDict['signStr'])
+                       dataDict['version'], SCERT_PATH, dataDict['signStr']]
+
+            self.loadPrivateK(SPRIV_PATH)
+            dataStr = ''.join([str(n for n in rcdList)]).encode('utf-8')
+            signatureServer = crypto.sign(self.priv_key, dataStr, 'sha256')
+            rcdList.append(signatureServer.hex())
             self.dbMgr.createFmSignRcd(rcdList)
-            reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('SR', 1))
+            reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('SR', signatureServer))
             sender.send(reply)
         else:
             reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('SR', 0))
             sender.send(reply)
+
+
+    #-----------------------------------------------------------------------------
+    def loadPrivateK(self, keyPath):
+        """ load pricate key from the sertificate file.
+        """
+        if not os.path.exists(keyPath):
+            print("The private file is not exist")
+        with open(keyPath, 'rb') as f:
+            self.priv_key = crypto.load_privatekey(
+                crypto.FILETYPE_PEM, f.read())
 
 #-----------------------------------------------------------------------------
     def initDecoder(self, Mode=None):
@@ -210,7 +229,7 @@ class FirmwServ(object):
 #-----------------------------------------------------------------------------
     def initVerifier(self):
         """Init the cerfiticate verifier."""
-        with open(SCERT_PATH,'rb') as f:
+        with open(SSLCERT_PATH,'rb') as f:
             self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
         print("Sign: Locaded the sign certificate file.")
 

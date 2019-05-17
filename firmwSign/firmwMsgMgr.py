@@ -87,10 +87,11 @@ class msgMgr(object):
     def _createHBmsg(self, lastAct, state):
         """ Create a heart beat function to handle the cmd execution response.
         """
+        if isinstance(state, bytes): state = state.hex()
         msgDict = {
             "act"   : 'HB',
             "lAct"  : lastAct,  # last received action 
-            "state" : state     # last action exe state.(0/1)
+            "state" : state     # last action exe state/data
         }
         return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
