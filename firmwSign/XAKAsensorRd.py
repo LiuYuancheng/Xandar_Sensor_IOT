@@ -14,7 +14,8 @@
 #-----------------------------------------------------------------------------
 
 import platform
-import io
+import io, sys
+import glob
 import wx # use wx to build the UI.
 import time
 import serial
@@ -67,6 +68,9 @@ LABEL_LIST = [
 ]
 PERIODIC = 500 # how many ms the periodic call back
 SENSOR_TYPE = 'XKAK_PPL_COUNT' # defualt sensor type.
+# defualt comm name.
+DE_COMM = 'COM3' if platform.system() == 'Windows' else '/dev/ttyUSB0'
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class SensorReaderFrame(wx.Frame):
@@ -81,8 +85,9 @@ class SensorReaderFrame(wx.Frame):
         self.dataList = []          # list to store the sensor data.
         self.valueDispList = []     # value list will display on UI.
         self.senId = self.version = self.sensorType = ''
-        self.signature = '' 
-        #'44c88023c0a6da30e78e1e699d01436cbf987f06213d15b64e0a972952fbd0a3ec578d33a67d34024e8851b776d7af7999f5f175c896c363ed4a93f6cd104a454eb8a48ab32da07489c1daee6614a45561c8823e462e72ce458a78e3f35f68ae157a027d165eb7dec9c8910af34723a9e14132943a9788bfbdc2c904d2207c6a36e92e647c3b450d14697856c2906f94b122a3a01966d48f72f3b29f8472a24813f471be288522ee68ad7de57ec9551722aa9dafdba991516535e618c8a3a94907ca7a46ff11e27bb254497a306685066a86c34eaa572cbf4ab44eaef0829ff1d6f0490ab8d0dece01cf031eda5a1f2690e8579b4cad5cf650846ed6bd4085db'
+        self.signature = '44c88023c0a6da30e78e1e699d01436cbf987f06213d15b64e0a972952fbd0a3ec578d33a67d34024e8851b776d7af7999f5f175c896c363ed4a93f6cd104a454eb8a48ab32da07489c1daee6614a45561c8823e462e72ce458a78e3f35f68ae157a027d165eb7dec9c8910af34723a9e14132943a9788bfbdc2c904d2207c6a36e92e647c3b450d14697856c2906f94b122a3a01966d48f72f3b29f8472a24813f471be288522ee68ad7de57ec9551722aa9dafdba991516535e618c8a3a94907ca7a46ff11e27bb254497a306685066a86c34eaa572cbf4ab44eaef0829ff1d6f0490ab8d0dece01cf031eda5a1f2690e8579b4cad5cf650846ed6bd4085db'
+        self.serialPort = DE_COMM # The serial port name we are going to read.
+        self.ser = None # serial comm port used to read the sensor data. 
         # Init the UI.
         self.bgPanel = wx.Panel(self)
         self.bgPanel.SetBackgroundColour(wx.Colour(200, 210, 200))
@@ -96,8 +101,7 @@ class SensorReaderFrame(wx.Frame):
         self.msgMgr = firmwMsgMgr.msgMgr(self)  # create the message manager.
         # Init the serial reader
         #self.ser = serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=1)
-        self.ser = serial.Serial('COM3', 115200, 8, 'N', 1, timeout=1) if platform.system() == 'Windows' \
-            else serial.Serial('/dev/ttyUSB0', 115200, 8, 'N', 1, timeout=1)
+        self.setSerialComm(searchFlag=True)
         # Init the recall future.
         # when did we last call periodic?             # track periodic timing
         self.lastPeriodicTime = time.time()
@@ -181,6 +185,9 @@ class SensorReaderFrame(wx.Frame):
 #-----------------------------------------------------------------------------
     def periodic(self, event):
         """ read the data one time and find the correct string can be used. """
+        if self.ser is None: 
+            print ("Serial readeing: The sensor is not connected.")
+            return None
         output = self.ser.read(500)     # read 500 bytes and parse the data.
         bset = output.split(b'XAKA')    # begine byte of the bytes set.
         for item in bset:
@@ -198,6 +205,41 @@ class SensorReaderFrame(wx.Frame):
         for i in range(len(self.valueDispList)): 
             self.valueDispList[i].SetLabel(str(self.dataList[i]))
  
+ #-----------------------------------------------------------------------------
+    def setSerialComm(self, searchFlag=False):
+        """ Automatically search for the sensor and do the connection."""
+        if self.ser is not None:
+            self.ser.close()  # close the exists opened port.
+        portList = []
+        if searchFlag:
+            # look for the port:
+            if sys.platform.startswith('win'):
+                ports = ['COM%s' % (i + 1) for i in range(256)]
+            elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+                # this excludes your current terminal "/dev/tty"
+                ports = glob.glob('/dev/tty[A-Za-z]*')
+            elif sys.platform.startswith('darwin'):
+                ports = glob.glob('/dev/tty.*')
+            else:
+                raise EnvironmentError('Comm connection: Unsupported platform')
+            for port in ports:
+                # Check whether the port can be open.
+                try:
+                    s = serial.Serial(port)
+                    s.close()
+                    portList.append(port)
+                except (OSError, serial.SerialException):
+                    pass
+            print(('Comm connection: the serial port can be used :%s' % str(portList)))
+
+        if not self.serialPort in portList:
+            self.serialPort = portList[-1]
+        try:
+            self.ser = serial.Serial(self.serialPort, 115200, 8, 'N', 1, timeout=1)
+        except:
+            print("Serial connection: serial port open error")
+            return None
+    
  #-----------------------------------------------------------------------------
     def sigaSimuInput(self, event):
         """ Input the sigature used for simulation.
