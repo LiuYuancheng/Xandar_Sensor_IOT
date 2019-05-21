@@ -43,6 +43,7 @@ class FirmwareSignTool(wx.Frame):
     def __init__(self, parent, id, title):
         """ Init the parameters and UI. """
         wx.Frame.__init__(self, parent, id, title, size=(450, 200))
+        self.SetIcon(wx.Icon(gv.ICON_PATH))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         # init parameter here:
         self.tcpClient = None
@@ -331,7 +332,6 @@ class FirmwareSignTool(wx.Frame):
         if dataDict['act'] == 'HB' and dataDict['lAct'] and dataDict['state']:
             print("FirmwSign: The firmware is signed successfully.")
 
-
 #-----------------------------------------------------------------------------
     def signFirmware_(self, event):
         """ Sign the firmware file and send the data to server.(fetch the private 
@@ -355,7 +355,6 @@ class FirmwareSignTool(wx.Frame):
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB' and dataDict['lAct']:
             print("FirmwSign: The firmware is signed successfully.")
-
 
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):

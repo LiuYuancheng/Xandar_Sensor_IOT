@@ -32,6 +32,9 @@ RG_SERVER_CHOICE = {
     "Server_1 [192.168.0.100]"  : ('192.168.0.100', RGTCP_PORT),
 }
 
+ICON_PATH = "".join([dirpath, "\\firmwSign\\singtelIcon.ico"])
+
+
 # Data received buffer size:
 BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
 
