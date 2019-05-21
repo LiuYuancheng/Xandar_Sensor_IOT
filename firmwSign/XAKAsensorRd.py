@@ -74,12 +74,15 @@ class SensorReaderFrame(wx.Frame):
     def __init__(self, parent, id, title):
         """ Init the UI and parameters """
         wx.Frame.__init__(self, parent, id, title, size=(400, 750))
+        self.SetIcon(wx.Icon(gv.ICON_PATH))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         # Init parameters.
         self.activeFlag = False     # whether we active the sensor data reading.
         self.dataList = []          # list to store the sensor data.
         self.valueDispList = []     # value list will display on UI.
         self.senId = self.version = self.sensorType = ''
+        self.signature = '' 
+        #'44c88023c0a6da30e78e1e699d01436cbf987f06213d15b64e0a972952fbd0a3ec578d33a67d34024e8851b776d7af7999f5f175c896c363ed4a93f6cd104a454eb8a48ab32da07489c1daee6614a45561c8823e462e72ce458a78e3f35f68ae157a027d165eb7dec9c8910af34723a9e14132943a9788bfbdc2c904d2207c6a36e92e647c3b450d14697856c2906f94b122a3a01966d48f72f3b29f8472a24813f471be288522ee68ad7de57ec9551722aa9dafdba991516535e618c8a3a94907ca7a46ff11e27bb254497a306685066a86c34eaa572cbf4ab44eaef0829ff1d6f0490ab8d0dece01cf031eda5a1f2690e8579b4cad5cf650846ed6bd4085db'
         # Init the UI.
         self.bgPanel = wx.Panel(self)
         self.bgPanel.SetBackgroundColour(wx.Colour(200, 210, 200))
@@ -107,7 +110,7 @@ class SensorReaderFrame(wx.Frame):
 #-----------------------------------------------------------------------------
     def buildUISizer(self, bgPanel):
         """ build the UI sizer for the background panel."""
-        sizer = wx.GridSizer(len(LABEL_LIST)+2, 2, 4, 4)
+        sizer = wx.GridSizer(len(LABEL_LIST)+4, 2, 4, 4)
         # Add the title line.
         sizer.Add(wx.Button(bgPanel, label='ParameterName ',
                             size=(195, 18), style=wx.BU_LEFT, name='ParameterName'))
@@ -121,12 +124,19 @@ class SensorReaderFrame(wx.Frame):
             sizer.Add(datalabel)
         # Add the server selection and regist button.
         self.serverchoice = wx.Choice(
-            bgPanel, -1, size=(190, 23), choices=list(gv.RG_SERVER_CHOICE.keys()), name='Server')
+            bgPanel, -1, size=(190, 20), choices=list(gv.RG_SERVER_CHOICE.keys()), name='Server')
         self.serverchoice.SetSelection(0)
         sizer.Add(self.serverchoice)
         self.regBt = wx.Button(bgPanel, label='Sensor registration.', size=(190, 23))
         self.regBt.Bind(wx.EVT_BUTTON, self.logtoServer)
         sizer.Add(self.regBt)
+        #sizer.Add(wx.StaticText(bgPanel, -1, 'Simulation setting:'))
+        sizer.AddSpacer(5)
+        sizer.AddSpacer(5)
+        # Added the siganature simution active button.
+        self.sgSimuBt = wx.Button(bgPanel, label='Sigature Simulation.', size=(190, 23))
+        self.sgSimuBt.Bind(wx.EVT_BUTTON, self.sigaSimuInput)
+        sizer.Add(self.sgSimuBt)
         return sizer
 
 #-----------------------------------------------------------------------------
@@ -149,8 +159,8 @@ class SensorReaderFrame(wx.Frame):
             print("SConnetion: start register to server")
             # Register the sensor.
             # Temporary hard code the sigature for test.
-            signature = '44c88023c0a6da30e78e1e699d01436cbf987f06213d15b64e0a972952fbd0a3ec578d33a67d34024e8851b776d7af7999f5f175c896c363ed4a93f6cd104a454eb8a48ab32da07489c1daee6614a45561c8823e462e72ce458a78e3f35f68ae157a027d165eb7dec9c8910af34723a9e14132943a9788bfbdc2c904d2207c6a36e92e647c3b450d14697856c2906f94b122a3a01966d48f72f3b29f8472a24813f471be288522ee68ad7de57ec9551722aa9dafdba991516535e618c8a3a94907ca7a46ff11e27bb254497a306685066a86c34eaa572cbf4ab44eaef0829ff1d6f0490ab8d0dece01cf031eda5a1f2690e8579b4cad5cf650846ed6bd4085db'
-            data = (self.senId, self.sensorType, self.version, signature)
+            
+            data = (self.senId, self.sensorType, self.version, self.signature)
             self.sslClient.send(self.msgMgr.dumpMsg(action='RG', dataArgs=data))
             dataDict = self.msgMgr.loadMsg(self.sslClient.recv(gv.BUFFER_SIZE))
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'RG' and dataDict['state']:
@@ -169,7 +179,7 @@ class SensorReaderFrame(wx.Frame):
             print("Connect to server fail.")
 
 #-----------------------------------------------------------------------------
-    def periodic(self,event):
+    def periodic(self, event):
         """ read the data one time and find the correct string can be used. """
         output = self.ser.read(500)     # read 500 bytes and parse the data.
         bset = output.split(b'XAKA')    # begine byte of the bytes set.
@@ -188,6 +198,15 @@ class SensorReaderFrame(wx.Frame):
         for i in range(len(self.valueDispList)): 
             self.valueDispList[i].SetLabel(str(self.dataList[i]))
  
+ #-----------------------------------------------------------------------------
+    def sigaSimuInput(self, event):
+        """ Input the sigature used for simulation.
+        """
+        dlg = wx.TextEntryDialog(self, "Enter the sensor sigature for simualtion", ' ')
+        dlg.CentreOnParent()
+        if dlg.ShowModal() == wx.ID_OK:
+            self.signature=dlg.GetValue()
+            
 #-----------------------------------------------------------------------------
     def OnClose(self, event):
         #self.ser.close()
