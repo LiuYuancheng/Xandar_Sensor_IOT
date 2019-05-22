@@ -110,10 +110,10 @@ class TLS_sslServer(object):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 def testCase():
-    print("Stepup server test")
+    print("Set up server test")
     sslServer = TLS_sslServer(None)
     sslServer.serverSet(port=5005, listen=1, block=1)
-    print("accept the connection from the client")
+    print("Accept the connection from the client")
 
     while 1:
         sslServer.acceptConnection()
@@ -121,7 +121,6 @@ def testCase():
             data = sslServer.recv(1024)
             if data is not None:
                 print(str(data))
-            if data is not None:
                 sslServer.send(b"server test string")
             if data is None:
                 break

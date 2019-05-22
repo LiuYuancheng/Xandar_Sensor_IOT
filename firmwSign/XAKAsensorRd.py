@@ -231,9 +231,8 @@ class SensorReaderFrame(wx.Frame):
                 except (OSError, serial.SerialException):
                     pass
             print(('Comm connection: the serial port can be used :%s' % str(portList)))
-
-        if not self.serialPort in portList:
-            self.serialPort = portList[-1]
+        # normally the first comm prot is resoved by the system.
+        if not self.serialPort in portList: self.serialPort = portList[-1]
         try:
             self.ser = serial.Serial(self.serialPort, 115200, 8, 'N', 1, timeout=1)
         except:

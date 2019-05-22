@@ -32,8 +32,8 @@ from datetime import datetime
 from OpenSSL import crypto
 
 pyVersionStr = str(platform.python_version())
-SENSOR_ID   = 203   # defualt sernsor ID for test.
-SIGNER_ID   = 200   # defualt signer user ID.
+SENSOR_ID   = 203   # default sernsor ID for test.
+SIGNER_ID   = 200   # default signer user ID.
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
