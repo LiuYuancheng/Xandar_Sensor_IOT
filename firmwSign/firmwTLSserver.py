@@ -16,16 +16,15 @@ import socket
 from OpenSSL import SSL, crypto
 import firmwGlobal as gv
 
-LOCAL_PORT = 5005 # Server defualt listening port.
-LISTEN_NUM = 1 # how many client we can handle at same time.
+LOCAL_PORT = 5005   # Server defualt listening port.
+LISTEN_NUM = 1      # how many client we can handle at same time.
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class TLS_sslServer(object):
     """ Create a SSL client."""
-
     def __init__(self, parent):
-        """ Load the certificate + pricate key file and init the ssl server.
-        """
+        """ Load the CA + certificate + pricate key and init the SSL server."""
         self.parent = parent
         self.cli = None  # the send()/recv() client we need to return.
         self.server = None
@@ -33,9 +32,9 @@ class TLS_sslServer(object):
         self.ctx = SSL.Context(SSL.SSLv23_METHOD)
         self.ctx.set_options(SSL.OP_NO_SSLv2)
         self.ctx.set_options(SSL.OP_NO_SSLv3)
+        # Demand a certificate
         self.ctx.set_verify(
-            SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verify_cb
-        )  # Demand a certificate
+            SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verifyCert)  
         self.ctx.use_privatekey_file(gv.SSSL_PRIK_PATH)
         self.ctx.use_certificate_file(gv.SSSL_CERT_PATH)
         self.ctx.load_verify_locations(gv.CA_PATH)
@@ -70,7 +69,7 @@ class TLS_sslServer(object):
         self.server.setblocking(block)
 
 #-----------------------------------------------------------------------------
-    def verify_cb(self, conn, cert, errnum, depth, ok):
+    def verifyCert(self, conn, cert, errnum, depth, ok):
         """ Verifiy the cerificate from client side."""
         certsubject = crypto.X509Name(cert.get_subject())
         commonname = certsubject.commonName
@@ -96,16 +95,18 @@ class TLS_sslServer(object):
 
 #-----------------------------------------------------------------------------
     def send(self, data):
+        """ Send data to server, will convert not bytes type data to bytes 
+            by using utf-8 encoding.
+        """
         if not isinstance(data, bytes):
-            print("The send data must be bytes format.")
-            return None
+            print("The send data <%s> has been converted to bytes format." %str(data))
+            data = str(data).encode('utf-8')
         self.cli.send(data)
 
 #-----------------------------------------------------------------------------
     def shutdown(self):
-        if not self.cli:
-            self.cli.shutdown()
-        self.server.shutdown()
+        if self.cli: self.cli.shutdown()
+        if self.server: self.server.shutdown()
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -128,7 +129,6 @@ def testCase():
     print("Finished and stop")
     sslServer.shutdown()
     sslServer.close()
-
 
 if __name__ == '__main__':
     pass

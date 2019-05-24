@@ -3,7 +3,8 @@
 #
 # Purpose:     This module is used create a message manager to dump the user 
 #              message to a json string/bytes data and load back to orignal
-#              data.(the detail usage you can follow the example in testCase) 
+#              data.(the detail usage you can follow the example in testCase, 
+#              all the bytes data in the json will be convert to hex.) 
 # Author:      Yuancheng Liu
 #
 # Created:     2019/05/09
@@ -36,11 +37,12 @@ class msgMgr(object):
     """
     def __init__(self, parent):
         self.parent = parent
-        self.data = None
 
 #-----------------------------------------------------------------------------
     def dumpMsg(self, action=None, dataArgs=None):
         """ Create the bytes message base on the action for sending to server.
+            returned the created message or None if the action is invalid.
+            Message sample: 'C'.encode('utf-8')+dict{'act': str, [data]}
         """
         datab = None
         if action == 'CR':
@@ -48,10 +50,14 @@ class msgMgr(object):
         elif action == 'HB':
             lastAct, state = dataArgs
             datab = self._createHBmsg(lastAct, state)
-        elif 'LI' in action:
-            datab = self._createLImsg(args=dataArgs)
-        elif 'LR' in action:
-            datab = self._createLRmsg(dataArgs)
+        elif action == 'LI1':
+            datab = self._createLI1msg(dataArgs)
+        elif action == 'LI2':
+            datab = self._createLI2msg(dataArgs)
+        elif action == 'LR1':
+            datab = self._createLR1msg(dataArgs)
+        elif action == 'LR2':
+            datab = self._createLR2msg(dataArgs)
         elif action == 'CF':
             datab = self._createCFmsg()
         elif action == 'FL':
@@ -62,20 +68,20 @@ class msgMgr(object):
             datab = self._createLOmsg()
         elif action == 'RG':
             datab = self._createRGmsg(dataArgs)
+        else:
+            print("The input action <%s> is invlid" %str(action))
         return datab
 
 #-----------------------------------------------------------------------------
     def loadMsg(self, msg):
-        """ Convert the dumpped message back to orignal data.
-        """
+        """ Convert the dumpped message back to orignal data. """
         tag = msg[0:1] # Take out the tag data.
         data = json.loads(msg[1:]) if tag == gv.CMD_TYPE else msg[1:]
         return data
 
 #-----------------------------------------------------------------------------
     def _createCRmsg(self):
-        """ Create the connection request message.
-        """
+        """ Create the connection request message. """
         msgDict = {
             "act"   : 'CR',
             "time"  : time.time()
@@ -84,8 +90,7 @@ class msgMgr(object):
 
 #-----------------------------------------------------------------------------
     def _createHBmsg(self, lastAct, state):
-        """ Create a heart beat function to handle the cmd execution response.
-        """
+        """ Create a heartbeat function to handle the cmd execution response."""
         if isinstance(state, bytes): state = state.hex()
         msgDict = {
             "act"   : 'HB',
@@ -95,59 +100,57 @@ class msgMgr(object):
         return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
-    def _createLImsg(self, args=None):
-        """ Create a login message: 
-            login step1: send userName + randomNum1
-            login step2: send randomNum2 + password
-        """ 
-        if args is None: return None 
-        if isinstance(args, str):
-            userName = args.strip()  # remove the user space.
-            randomB = os.urandom(gv.RAN_LEN)
-            msgDict = {
-                "act"   : 'LI1',
-                "user"  : str(userName),
-                "random1": randomB.hex()
-            }
-            data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
-            return (data, randomB)
-        elif len(args) == 2:
-            (randomB, password) = args
-            msgDict = {
-                "act"       : 'LI2',
-                "random2"   : randomB,
-                "password"  : password 
-            }
-            data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
-            return data
+    def _createLI1msg(self, userName):
+        """ Create login step1 msg: send userName + randomNum1 """
+        if userName is None or not isinstance(userName, str): return None 
+        randomB = os.urandom(gv.RAN_LEN)
+        msgDict = {
+            "act"       : 'LI1',
+            "user"      : userName.strip(),
+            "random1"   : randomB.hex()
+        }
+        data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return (data, randomB)
 
 #-----------------------------------------------------------------------------
-    def _createLRmsg(self, args=None):
-        """ Create a login request.
-        """ 
-        if args is None: return args
-        if isinstance(args, str):
-            challenge = args.strip()
-            msgDict = {
-                "act"       : 'LR2',
-                "challenge" : challenge,
-            }
-            return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
-        elif len(args) == 2:
-            (randomB, state) = args
-            randomB2 = os.urandom(gv.RAN_LEN)
-            msgDict = {
-                "act"       : 'LR1',
-                "state"     : state,
-                "random1"   : randomB,
-                "random2"   : randomB2.hex() 
-            }
-            data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
-            return (data, randomB2)
+    def _createLI2msg(self, args):
+        """ Create login step2 msg: send randomNum2 + password """
+        (random2, password) = args
+        msgDict = {
+            "act"       : 'LI2',
+            "random2"   : random2,
+            "password"  : password 
+        }
+        data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return data
+
+#-----------------------------------------------------------------------------
+    def _createLR1msg(self, args):
+        """ Create login step1 response: randomNum1 + randomNum2. """
+        (randomB, state) = args
+        randomB2 = os.urandom(gv.RAN_LEN)
+        msgDict = {
+            "act"       : 'LR1',
+            "state"     : state,
+            "random1"   : randomB,
+            "random2"   : randomB2.hex() 
+        }
+        data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return (data, randomB2)
+
+#-----------------------------------------------------------------------------
+    def _createLR2msg(self, challengeStr):
+        """ Create login step1 response: SWATT_challenge string. """
+        if challengeStr is None or not isinstance(challengeStr, str): return None
+        msgDict = {
+            "act"       : 'LR2',
+            "challenge" : challengeStr.strip(),
+        }
+        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createLOmsg(self):
-        """Create a log out requst."""
+        """ Create a log out requst."""
         msgDict = {
             "act"   : 'LO',
             "time"  : time.time()
@@ -156,8 +159,7 @@ class msgMgr(object):
 
 #-----------------------------------------------------------------------------
     def _createCFmsg(self):
-        """ Create a certificate file fetch requset.
-        """
+        """ Create a certificate file fetch requset. """
         msgDict = {
             "act"   : 'CF',
             "time"  : time.time()
@@ -166,54 +168,52 @@ class msgMgr(object):
 
 #-----------------------------------------------------------------------------
     def _createSRmsg(self, args):
-        """ Create a sign response message. 
-        """
+        """ Create a sign response message.(Sign client->Sever) """
         if len(args) != 7:
-            print("Msgmgr: The required elemsnt in the RS message<%s>" %str(args))
+            print("Msgmgr: The required elemsnt missing in the RS msg<%s>" %str(args))
             return None
         sensorId, signerId, swatt, date, typeS, versionS, signS = args
         msgDict = {
-            "act"   : 'SR',     
-            "id"    : sensorId,     # sensor ID
-            "sid"   : signerId,     # Signer factory user ID.
-            "swatt" : swatt,        # File SWATT value. 
-            "date"  : date,         # time stamp.
-            "tpye"  : typeS,        # Sensor type.
-            "version": versionS,    # Sensor version.
-            "signStr": signS.hex()  # Signature string.
+            "act"       : 'SR',     
+            "id"        : sensorId,     # sensor ID
+            "sid"       : signerId,     # Signer factory user ID.
+            "swatt"     : swatt,        # File SWATT value. 
+            "date"      : date,         # time stamp.
+            "tpye"      : typeS,        # Sensor type.
+            "version"   : versionS,     # Sensor version.
+            "signStr"   : signS.hex()   # Signature string.
         }
         return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createRGmsg(self, args):
+        """ Create a sensor registration message.(Sensor client -> Server)"""
         if len(args) != 4:
-            print("Msgmgr: The required message in RG the <%s>" %str(args))
+            print("Msgmgr: The required element missing in RG msg <%s>" %str(args))
             return None
         sensorId, sensorType, fwVersion, signS = args
         if isinstance(signS, bytes): signS = signS.hex()
         msgDict = {
-            "act"   : 'RG',     
-            "id"    : sensorId,     # sensor ID
-            "type"  : sensorType,     # Signer factory user ID.
-            "time"  : time.time(),
-            "version": fwVersion,    # Sensor version.
-            "signStr": signS # Signature string.
+            "act"       : 'RG',     
+            "id"        : sensorId,     # sensor ID
+            "type"      : sensorType,   # Signer factory user ID.
+            "time"      : time.time(),
+            "version"   : fwVersion,    # Sensor version.
+            "signStr"   : signS         # Signature string.
         }
         return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createFLmsg(self, bytesData):
-        """ Create the file message.
-        """
+        """ Create the file message."""
         return gv.FILE_TYPE + bytesData
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
-# TODO: finished the test case.
 def testCase():
     testMsgr = msgMgr(None)
     print("Start the message process test:")
-    pCount = 0 
+    pCount = 0 # test fail count.
     #
     tPass = True
     print("Connection request test:")
@@ -222,10 +222,10 @@ def testCase():
     tPass = tPass and msgDict['act'] == 'CR'
     tPass = tPass and 'time' in msgDict.keys()
     if tPass:
-        print("Connection request test pass")
+        print("Connection request test pass.")
     else:
         pCount += 1
-        print("Connection request test fail")
+        print("Connection request test fail.")
     #
     tPass = True
     print("HearBeat message test:")
@@ -235,14 +235,14 @@ def testCase():
     tPass = tPass and msgDict['lAct'] == 'HB'
     tPass = tPass and msgDict['state'] == 1
     if tPass:
-        print("HeartBeat request test pass")
+        print("HeartBeat request test pass.")
     else:
         pCount += 1
-        print("HeartBeat request test fail")
+        print("HeartBeat request test fail.")
     #
     tPass = True
     print("Login user request test:")
-    msg, val = testMsgr.dumpMsg(action='LI', dataArgs='user')
+    msg, val = testMsgr.dumpMsg(action='LI1', dataArgs='user')
     msgDict = testMsgr.loadMsg(msg)    
     tPass = tPass and msgDict['act'] == 'LI1'
     tPass = tPass and msgDict['user'] == 'user'
@@ -268,7 +268,7 @@ def testCase():
     # 
     tPass = True
     print("Login user response test:")
-    msg, val = testMsgr.dumpMsg(action='LR', dataArgs=('1234', 1))
+    msg, val = testMsgr.dumpMsg(action='LR1', dataArgs=('1234', 1))
     msgDict = testMsgr.loadMsg(msg)
     tPass = tPass and msgDict['act'] == 'LR1'
     tPass = tPass and msgDict['state'] == 1
@@ -282,7 +282,7 @@ def testCase():
     #
     tPass = True
     print("Login password response test:")
-    msg = testMsgr.dumpMsg(action='LR', dataArgs='challenge')
+    msg = testMsgr.dumpMsg(action='LR2', dataArgs='challenge')
     msgDict = testMsgr.loadMsg(msg)
     tPass = tPass and msgDict['act'] == 'LR2'
     tPass = tPass and msgDict['challenge'] == 'challenge'
