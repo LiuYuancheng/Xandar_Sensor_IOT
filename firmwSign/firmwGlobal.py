@@ -32,6 +32,7 @@ RG_SERVER_CHOICE = {
     "Server_1 [192.168.0.100]"  : ('192.168.0.100', RGTCP_PORT),
 }
 
+#UI window ICON.
 ICON_PATH = "".join([dirpath, "\\firmwSign\\singtelIcon.ico"])
 
 
