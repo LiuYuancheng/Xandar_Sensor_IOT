@@ -33,7 +33,7 @@ from OpenSSL import crypto
 
 pyVersionStr = str(platform.python_version())
 SENSOR_ID   = 203   # default sernsor ID for test.
-SIGNER_ID   = 200   # default signer user ID.
+SIGNER_ID   = 154946511204681   # default signer user ID.
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -318,6 +318,7 @@ class FirmwareSignTool(wx.Frame):
         self.loadPrivateK(gv.CSSL_PRIK_PATH)
         sensor_id = str(SENSOR_ID)
         signer_id = str(SIGNER_ID)
+        self.swattHd.setPuff(int(signer_id))
         swatt_str = self.getSWATThash(self.firmwarePath)
         date_str = str(time.time())#str(datetime.now())
         sensor_type = 'XKAK_PPL_COUNT'

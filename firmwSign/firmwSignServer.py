@@ -141,6 +141,7 @@ class FirmwServ(object):
         print("SingVerify: This is the decryptioin sstr: %s" % checkStr)
 
         # Double confirm the SWATT
+        self.swattHd.setPuff(int(dataDict['sid']))
         self.responseEpc = self.swattHd.getSWATT(self.ranStr, 300, gv.DEFUALT_FW)
         if dataDict['swatt'] == self.responseEpc:
             print("SingVerify: the firmware is signed successfully")
