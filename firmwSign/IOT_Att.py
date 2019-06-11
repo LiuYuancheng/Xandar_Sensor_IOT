@@ -14,6 +14,7 @@ import os
 import random
 import string
 from uuid import getnode as get_mac
+DE_PUFF = 154946511204680
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -24,6 +25,7 @@ class swattCal(object):
     # -----------------------------------------------------------------------------
     def __init__(self):
         self.state = None
+        self.puffVal = DE_PUFF  # DEFAULT PUFF VALUE FOR EACH DEVICE
 
     # -----------------------------------------------------------------------------
     def bitExtracted(self, number, k, s):
@@ -33,8 +35,9 @@ class swattCal(object):
     # -----------------------------------------------------------------------------
     def extract_CRpair(self, challenegeStr):
         """ Extract challenege response pair for the given key and iteration """
-        final = self.bitExtracted(
-            get_mac(), 16, 1)  # UNIQUE PUFF VALUE FOR EACH DEVICE
+        #final = self.bitExtracted( <= this caused SWATT val different on different divice.
+        #    get_mac(), 16, 1)  # UNIQUE PUFF VALUE FOR EACH DEVICE
+        final = self.bitExtracted(self.puffVal, 16, 1)
         test = [(ord(k) ^ final) for k in challenegeStr]
         for idx in range(len(test)):
             if(idx != len(test)-1): test[idx] ^= test[idx+1]
@@ -44,10 +47,18 @@ class swattCal(object):
     # -----------------------------------------------------------------------------
     def setKey(self, key,m):
         """RC4 Key Scheduling Algorithm (KSA)"""
-        j, self.state, = 0, [n for n in range(m)]#fill with numnber ranging from 0 to 255
+        j, self.state, = 0, list(range(m)) #[n for n in range(m)]#fill with numnber ranging from 0 to 255
         for i in range(m):
             j = (j + self.state[i] + key[i % len(key)]) % m
             self.state[i], self.state[j] = self.state[j], self.state[i]
+
+    # -----------------------------------------------------------------------------
+    def setPuff(self, puff):
+        """ Set the PUFF seed value. puff must be a int"""
+        if not isinstance(puff, int):
+            print("The puff<%s> must be a int type" % puff)
+            return
+        self.puffVal = puff
 
     # -----------------------------------------------------------------------------
     def string_to_list(self, inputString):
@@ -103,6 +114,7 @@ def testCase():
     firmwarePath = "".join([os.getcwd(), "\\firmwSign\\firmwareSample"])
     calculator = swattCal()
     print("Start test.")
+    calculator.setPuff(154946511204680)
     result = calculator.getSWATT("Testing", 300, firmwarePath)
     #print(result)
     if result == '0x397d':
