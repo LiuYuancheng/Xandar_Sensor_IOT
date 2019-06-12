@@ -13,8 +13,20 @@
 import os
 import random
 import string
-from uuid import getnode as get_mac
+#from uuid import getnode as get_mac
+RAN_FLAG = True #Flag to decide wehter we ues Linear congruential generator(BSD)
 DE_PUFF = 154946511204680
+
+# -----------------------------------------------------------------------------
+# Linear congruential generator(BSD) 
+def bsd_rand(seed):
+    """ Reference: https://rosettacode.org/wiki/Linear_congruential_generator
+    """
+    def rand():
+        rand.seed = (1103515245*rand.seed + 12345) & 0x7fffffff
+        return rand.seed
+    rand.seed = seed
+    return rand
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -52,6 +64,8 @@ class swattCal(object):
             j = (j + self.state[i] + key[i % len(key)]) % m
             self.state[i], self.state[j] = self.state[j], self.state[i]
 
+        print()
+
     # -----------------------------------------------------------------------------
     def setPuff(self, puff):
         """ Set the PUFF seed value. puff must be a int"""
@@ -88,11 +102,16 @@ class swattCal(object):
                 # (RC4i<<8)+c[(j-1)mod 8]
                 Address = (self.state[i] << 8)+prev_cs
                 #use python PRG to generate address Range
-                random.seed(Address)
-                Address = random.randint(1, 128000)
+                if RAN_FLAG:
+                    randGen = bsd_rand(Address)
+                    Address = randGen()%128000+1
+                else:
+                    random.seed(Address)
+                    Address = random.randint(1, 128000)
                 # read the EEPROM Memory content
                 fh.seek(Address)
                 strTemp = fh.read(1)
+
                 #calculate checksum at the location
                 if not strTemp: continue  # jump over the empty str ""
                 # current_cs=current_cs+(ord(strTemp[0])^pprev_cs+state[i-1])
@@ -105,6 +124,7 @@ class swattCal(object):
                 # update c[(j-2)mod 8] & c[(j-1)mod 8]
                 pprev_cs = prev_cs
                 prev_cs = current_cs
+            #return current_cs
             return hex(hash(current_cs))
 
 # -----------------------------------------------------------------------------
@@ -116,11 +136,15 @@ def testCase():
     print("Start test.")
     calculator.setPuff(154946511204680)
     result = calculator.getSWATT("Testing", 300, firmwarePath)
-    #print(result)
-    if result == '0x397d':
-        print("SWATT calcualtion test pass.")
+    print(result)
+    if result == '0x397d' and not RAN_FLAG:
+        print("SWATT calcualtion test pass.(use defualt random)")
         return
-    print("SWATT calculation test fail.")
+    elif result == '0x3b0d' and  RAN_FLAG:
+        print("SWATT calcualtion test pass.(use Linear congruential generator random)")
+        return
+    else:
+        print("SWATT calculation test fail.")
 
 if __name__ == '__main__':
     testCase()
