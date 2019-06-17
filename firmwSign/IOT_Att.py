@@ -20,8 +20,7 @@ DE_PUFF = 154946511204680
 # -----------------------------------------------------------------------------
 # Linear congruential generator(BSD) 
 def bsd_rand(seed):
-    """ Reference: https://rosettacode.org/wiki/Linear_congruential_generator
-    """
+    """ Reference: https://rosettacode.org/wiki/Linear_congruential_generator """
     def rand():
         rand.seed = (1103515245*rand.seed + 12345) & 0x7fffffff
         return rand.seed
@@ -38,6 +37,7 @@ class swattCal(object):
     def __init__(self):
         self.state = None
         self.puffVal = DE_PUFF  # DEFAULT PUFF VALUE FOR EACH DEVICE
+        self.iterM = 0  # swatt iteration time.
 
     # -----------------------------------------------------------------------------
     def bitExtracted(self, number, k, s):
@@ -64,8 +64,6 @@ class swattCal(object):
             j = (j + self.state[i] + key[i % len(key)]) % m
             self.state[i], self.state[j] = self.state[j], self.state[i]
 
-        print()
-
     # -----------------------------------------------------------------------------
     def setPuff(self, puff):
         """ Set the PUFF seed value. puff must be a int"""
@@ -74,6 +72,12 @@ class swattCal(object):
             return
         self.puffVal = puff
 
+    # -----------------------------------------------------------------------------
+    def setIterationNum(self, iterationNum):
+        """ Set the SWATT iteration loop time"""
+        if iterationNum<= 0: return
+        self.iterM = iterationNum
+        
     # -----------------------------------------------------------------------------
     def string_to_list(self, inputString):
         """Convert a string into a byte list"""
@@ -97,7 +101,9 @@ class swattCal(object):
             pprev_cs, prev_cs, current_cs = self.state[256:259]
             init_seed = m  # set x(i-1)
             # print init_cs.bit_length(),bin(init_cs),init_cs
-            for i in range(m):
+
+            iterNum = self.iterM if self.iterM > 0 else m
+            for i in range(iterNum):
                 swatt_seed = cr_response ^ init_seed  # y(i-1)=p(c) xor x(i-1)
                 # (RC4i<<8)+c[(j-1)mod 8]
                 Address = (self.state[i] << 8)+prev_cs
@@ -107,11 +113,11 @@ class swattCal(object):
                     Address = randGen()%128000+1
                 else:
                     random.seed(Address)
-                    Address = random.randint(1, 128000)
+                    Address = random.randint(1, 128000) #YC: why only check 128000 bytes? 
                 # read the EEPROM Memory content
                 fh.seek(Address)
                 strTemp = fh.read(1)
-
+                # print(Address)
                 #calculate checksum at the location
                 if not strTemp: continue  # jump over the empty str ""
                 # current_cs=current_cs+(ord(strTemp[0])^pprev_cs+state[i-1])
@@ -134,7 +140,7 @@ def testCase():
     firmwarePath = "".join([os.getcwd(), "\\firmwSign\\firmwareSample"])
     calculator = swattCal()
     print("Start test.")
-    calculator.setPuff(154946511204680)
+    calculator.setPuff(1549465112)
     result = calculator.getSWATT("Testing", 300, firmwarePath)
     print(result)
     if result == '0x397d' and not RAN_FLAG:
