@@ -49,18 +49,18 @@ class AESCipher:
     def updateParam(self, key=None, iv=None, mode=None):
         if key:self.key = key
         if iv:self.iv = iv
-        if mode:self.mode = mode
+        if mode:self.cipherMode = mode
 
     def encrypt(self, raw):
         #iv =  bytes([0xa5]*16)
         #cipher = AES.new(self.key, AES.MODE_CBC, iv )
-        cipher = AES.new(self.key, self.mode, self.iv)
+        cipher = AES.new(self.key, self.cipherMode, self.iv)
         return cipher.encrypt(raw)
 
     def decrypt(self, enc):
         #iv = bytes([0xa5]*16)
         #cipher = AES.new(self.key, AES.MODE_CBC, iv )
-        cipher = AES.new(self.key, self.mode, self.iv)
+        cipher = AES.new(self.key, self.cipherMode, self.iv)
         return cipher.decrypt(enc)
 
 #-----------------------------------------------------------------------------

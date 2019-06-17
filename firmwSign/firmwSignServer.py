@@ -23,6 +23,7 @@ import IOT_Att as SWATT
 import firmwDBMgr as DataBase
 import firmwMsgMgr
 import firmwTLSserver as SSLS
+import firmwTAServer as TAS
 import firmwGlobal as gv
 from OpenSSL import crypto
 
@@ -53,8 +54,12 @@ class FirmwServ(object):
         # Init the database manager. 
         self.dbMgr = DataBase.firmwDBMgr()
         # Init the sensor register thread
-        self.rgThread = commThread(1, "RG_response_thread", self.dbMgr)
+        self.rgThread = rgCommThread(1, "RG_response_thread", self.dbMgr)
         self.rgThread.start()
+        # Init the trustClient Server
+        #self.taThread = taCommThread(2, "TA_server_thread")
+        #self.rgThread.start()
+
 
 #-----------------------------------------------------------------------------
     def checkLogin(self, userName, password):
@@ -266,7 +271,7 @@ class FirmwServ(object):
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
-class commThread(threading.Thread):
+class rgCommThread(threading.Thread):
     """ Thread to opena SSL channel for the sensor registration function.""" 
     def __init__(self, threadID, name, dbMgr):
         threading.Thread.__init__(self)
@@ -325,6 +330,22 @@ class commThread(threading.Thread):
         """ handle the client connection request."""
         reply = self.msgMgr.dumpMsg(action='HB', dataArgs=('CR', 1))
         sender.send(reply)
+
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+class taCommThread(threading.Thread):
+    """ Thread to opena SSL channel for the sensor registration function.""" 
+    def __init__(self, threadID, name, dbMgr):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.taServer = TAS.firmwTAServer() # init TrustAPP server.
+        print("TA server:  Thread init.")
+
+    #-----------------------------------------------------------------------------
+    def run(self):
+        """ main server loop to handle the user's requst. """
+        self.taServer.startServer()
 
 #-----------------------------------------------------------------------------
 def startServ():
