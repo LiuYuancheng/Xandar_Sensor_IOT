@@ -56,6 +56,12 @@ class swattCal(object):
             final += test[idx] << 2
         return final
 
+    #-----------------------------------------------------------------------------
+    def randomChallStr(self, stringLength=10):
+        """Generate a random chanllenge string of fixed length """
+        letters = string.ascii_lowercase
+        return ''.join(random.choice(letters) for i in range(stringLength))
+
     # -----------------------------------------------------------------------------
     def setKey(self, key,m):
         """RC4 Key Scheduling Algorithm (KSA)"""

@@ -106,7 +106,7 @@ class firmwTAServer(object):
         # pad the input challenge string to bytes data with b'Z'.
         self.challengeB = bytes(
             [ord(n) for n in self.challengeStr] + [ord('Z')]*(DE_BUFFER_SIZE-self.challengeLen))
-            
+
 #-----------------------------------------------------------------------------
     def handle_client_connection(self, client_socket):
         
@@ -114,14 +114,15 @@ class firmwTAServer(object):
         request = client_socket.recv(DE_BUFFER_SIZE)
         print ('TA_Server: Get message: {}'.format(request))
         data = self.msgMgr.loadMsg(request)
-        # Set the challenge string based on the request. 
+        # Set the challenge string based on the request.
+        
+        pro_v, key_v, gw_id, c_len, _ = str(data)[2:].split(';')
         self.setSwattChalStr("abdcedfs")
 
         print ('TA_Server:  Send the encrypted challenge bytes')
         self.encrypted = self.cipher.encrypt(self.challengeB)
         client_socket.send(self.encrypted)
-        
-        
+           
         self.swattHd.setIterationNum(100)
         # Calcualte the SWATT value for verification.
         result = self.swattHd.getSWATT(self.challengeStr, 300, "firmwareSample")

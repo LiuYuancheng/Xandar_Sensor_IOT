@@ -14,7 +14,6 @@
 import os
 import sys
 import json
-import random
 import string
 import socket
 import chilkat
@@ -72,7 +71,7 @@ class FirmwServ(object):
         if bytes.fromhex(dataDict['random2']) == self.ownRandom:
             if self.dbMgr.authorizeUser(self.loginUser, dataDict['password']):
                 print("Login2: User login password correct.")
-                self.ranStr = self.randomChallStr(stringLength=10)
+                self.ranStr = self.swattHd.randomChallStr(stringLength=10)
                 reply = self.msgMgr.dumpMsg(action='LR2',dataArgs=self.ranStr)
                 sender.send(reply)
                 return True # return if the user password is correct.
@@ -219,12 +218,6 @@ class FirmwServ(object):
         with open(gv.CSSL_CERT_PATH,'rb') as f:
             self.cert = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
         print("Sign: Locaded the sign certificate file.")
-
-#-----------------------------------------------------------------------------
-    def randomChallStr(self, stringLength=10):
-        """Generate a random chanllenge string of fixed length """
-        letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for i in range(stringLength))
 
 #-----------------------------------------------------------------------------
     def securRadeom(self, stringLength = 4):
