@@ -116,16 +116,23 @@ class firmwTAServer(object):
         data = self.msgMgr.loadMsg(request)
         # Set the challenge string based on the request.
         
-        pro_v, key_v, gw_id, c_len, _ = str(data)[2:].split(';')
-        self.setSwattChalStr("abdcedfs")
+        key_v, gw_id, pro_v, c_len, m , n, _ = str(data)[3:].split(';')
+        print((key_v, gw_id, pro_v, c_len, m , n))
 
+        swattStr = self.swattHd.randomChallStr(stringLength=int(c_len))
+        self.setSwattChalStr(swattStr, challengelen=int(c_len))
+
+        if(int(key_v)):
+            print("TA_Server: user key version %s" %key_v)
+            self.cipher.updateParam(key=DE_AES_KEY, iv=DE_AES_IV, mode=AES.MODE_CBC)
+    
         print ('TA_Server:  Send the encrypted challenge bytes')
         self.encrypted = self.cipher.encrypt(self.challengeB)
         client_socket.send(self.encrypted)
            
-        self.swattHd.setIterationNum(100)
+        self.swattHd.setIterationNum(int(n))
         # Calcualte the SWATT value for verification.
-        result = self.swattHd.getSWATT(self.challengeStr, 300, "firmwareSample")
+        result = self.swattHd.getSWATT(self.challengeStr, int(m), "firmwareSample")
         result = int(result, 0) # hex string to int.
         print ('TA_Server:  SWATT result<%s>' % str(result))
         
