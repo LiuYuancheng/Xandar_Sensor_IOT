@@ -126,9 +126,9 @@ class swattCal(object):
                 # print(Address)
                 #calculate checksum at the location
                 if not strTemp: continue  # jump over the empty str ""
+                num = ord(strTemp) if len(strTemp)!=0 else 0
                 # current_cs=current_cs+(ord(strTemp[0])^pprev_cs+state[i-1])
-                current_cs = current_cs + \
-                    (ord(strTemp) ^ pprev_cs+self.state[i-1])
+                current_cs = current_cs + (num ^ pprev_cs+self.state[i-1])
                 # extra seed for the SWATT
                 init_seed = current_cs+swatt_seed
                 # update current_cs

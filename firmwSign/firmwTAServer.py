@@ -116,7 +116,7 @@ class firmwTAServer(object):
         data = self.msgMgr.loadMsg(request)
         # Set the challenge string based on the request.
         
-        key_v, gw_id, pro_v, c_len, m , n, _ = str(data)[3:].split(';')
+        key_v, gw_id, pro_v, c_len, m , n, _ = str(data)[2:].split(';')
         print((key_v, gw_id, pro_v, c_len, m , n))
 
         swattStr = self.swattHd.randomChallStr(stringLength=int(c_len))
@@ -144,10 +144,23 @@ class firmwTAServer(object):
         data = str(data).split('x0')[0]
         print('TA_Server: Received the SWATT<%s>' %str(data))
         # The back data example is b'4098\x00ZZZZZZZZZZ'
+        resp = 'T'
         if int(data[2:-1]) == result: 
             print("The file Swatt value has been verified.")
         else: 
-            print("The value are differet:"+str((data[2:-1]), result))
+            print("The value are differet:"+str((data[2:-1], result)))
+            resp = 'F'
+        self.challengeB = bytes([ord(resp)]+[ord(n) for n in self.challengeStr] + [ord('Z')]*(DE_BUFFER_SIZE-self.challengeLen-1))
+        self.encrypted = self.cipher.encrypt(self.challengeB)
+        client_socket.send(self.encrypted)
+        request = client_socket.recv(1024)
+        msg = str(self.msgMgr.loadMsg(request))[2:].split(';')
+        if msg[0] == '': 
+            print("The program is not running.")
+        else: 
+            for data in msg[:-1]:
+                print(data)
+        print("Finished the verification ")
 
 #-----------------------------------------------------------------------------
     def startServer(self):
