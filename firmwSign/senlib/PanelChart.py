@@ -73,12 +73,17 @@ class PanelChart(wx.Panel):
     def DrawData(self, dc):
 
         color = ('#0ab1ff', 'red', 'green')
+        label = ("Cur_N", "Avg_N", "Fnl_N") 
         #dc.SetPen(wx.Pen('#0ab1ff'))
         for idx in range(3):
             dc.SetPen(wx.Pen(color[idx]))
+            dc.DrawLine(idx*100, 210, idx*100+30, 210)
+            dc.DrawText(label[idx], idx*100+35, 215)
+
             for i in range(len(self.data)-1):
-                dc.DrawLine(
-                    (i+1)*5, int(self.data[i][idx]*10), (i+2)*5, int(self.data[i+1][idx]*10))
+                y1 = self.data[i][idx]*10 if self.data[i][idx]*10 <200 else 200
+                y2 = self.data[i+1][idx]*10 if self.data[i+1][idx]*10<200 else 200
+                dc.DrawLine((i+1)*5, int(y1), (i+2)*5, int(y2))
 
 
 class LineChartExample(wx.Frame):
