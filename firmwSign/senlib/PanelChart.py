@@ -8,7 +8,7 @@ PERIODIC = 500  # how many ms the periodic call back
 class PanelChart(wx.Panel):
 
     def __init__(self, parent, recNum):
-        wx.Panel.__init__(self, parent)
+        wx.Panel.__init__(self, parent, size=(350, 300))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.recNum = 60
         self.Bind(wx.EVT_PAINT, self.OnPaint)
@@ -62,8 +62,12 @@ class PanelChart(wx.Panel):
         dc.SetFont(font)
         dc.DrawText('XAKA sensor data', 90, 235)
 
-    def addData(self, num):
-        self.data.append(num)
+    def addData(self, nums):
+
+        for i, value in enumerate(nums, 1):
+            if value> 20:
+                nums[i] = 20
+        self.data.append(nums)
         self.data.pop(0)
 
     def DrawData(self, dc):
@@ -86,22 +90,22 @@ class LineChartExample(wx.Frame):
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         self.linechart = PanelChart(panel, 100)
-        hbox.Add(self.linechart, 1, wx.EXPAND | wx.ALL, 15)
+        hbox.Add(self.linechart)
         panel.SetSizer(hbox)
         self.Centre()
         self.Show(True)
 
-        self.timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.periodic)
-        self.timer.Start(PERIODIC)  # every 500 ms
+        #self.timer = wx.Timer(self)
+        #self.Bind(wx.EVT_TIMER, self.periodic)
+        #self.timer.Start(PERIODIC)  # every 500 ms
 
-    def periodic(self, event):
+    def periodic(self):
         num = random.randint(0, 20)
         self.linechart.addData(
-            (random.randint(0, 20), random.randint(0, 20), random.randint(0, 20))
+            (random.randint(0, 20), random.randint(0, 20), random.randint(0, 20)))
         self.linechart.updateDisplay()
 
 
-app = wx.App()
-LineChartExample(None, -1, 'A line chart')
-app.MainLoop()
+#app = wx.App()
+#LineChartExample(None, -1, 'A line chart')
+#app.MainLoop()
