@@ -26,7 +26,7 @@ from functools import partial
 import firmwMsgMgr
 import firmwTLSclient as SSLC
 import firmwGlobal as gv
-import senlib.PanelChart as PanelChart
+import XAKAsensorPanel as xsp
 
 
 # People counting sensor message labels
@@ -89,36 +89,6 @@ class PageOne(wx.Panel):
         wx.Panel.__init__(self, parent)
         t = wx.StaticText(self, -1, "Add more sensor here", (20,20))
 
-
-class PanelSenBInfo(wx.Panel):
-
-    def __init__(self, parent):
-        wx.Panel.__init__(self, parent, size=(120, 300))
-        self.SetBackgroundColour(wx.Colour(200, 210, 200))
-        
-        self.valueDispList = []
-        flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.AddSpacer(20)
-        for item in LABEL_LIST2:
-
-            sizer.Add(wx.StaticText(self, -1, item))
-            datalabel = wx.StaticText(self, -1, '--')
-            self.valueDispList.append(datalabel)
-            sizer.Add(datalabel,flag=flagsR, border=2)
-
-        self.pauseBt = wx.Button(self, label='Pause', size=(100, 23))
-        sizer.Add(self.pauseBt,flag=flagsR, border=2)
-        self.detailBt = wx.Button(self, label='Detail >>', size=(100, 23))
-        sizer.Add(self.detailBt,flag=flagsR, border=2)
-
-        self.SetSizer(sizer)
-        self.Show(True)
-        
-    def updateData(self, dataList):
-        for i in range(len(dataList)):
-             self.valueDispList[i].SetLabel(str(dataList[i]))
-
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class SensorReaderFrame(wx.Frame):
@@ -148,11 +118,11 @@ class SensorReaderFrame(wx.Frame):
         flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
         
         hbox= wx.BoxSizer(wx.HORIZONTAL)
-        self.linechart = PanelChart.PanelChart(self.bgPanel, 100)
+        self.linechart = xsp.PanelChart(self.bgPanel, 100)
         hbox.Add(self.linechart, 1)
         #sizer = self.buildUISizer(self.bgPanel)
         #self.bgPanel.SetSizer(sizer)
-        self.infoPanel = PanelSenBInfo(self.bgPanel)
+        self.infoPanel = PanelBaseInfo(self.bgPanel)
         hbox.Add(self.infoPanel,1)
         self.bgPanel.SetSizer(hbox)
         
@@ -282,7 +252,8 @@ class SensorReaderFrame(wx.Frame):
         #num = random.randint(0, 20)
         self.linechart.addData(
             list((self.dataList[4], self.dataList[9], self.dataList[27])))
-        self.linechart.updateDisplay()
+        self.linechart.Refresh(True)
+        self.linechart.Update()
 
         dataList = (self.dataList[0],'COM1',self.dataList[3],self.dataList[4], self.dataList[9], self.dataList[27])
         self.infoPanel.updateData(dataList)
