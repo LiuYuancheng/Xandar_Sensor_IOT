@@ -75,14 +75,6 @@ SENSOR_TYPE = 'XKAK_PPL_COUNT' # defualt sensor type.
 DE_COMM = 'COM3' if platform.system() == 'Windows' else '/dev/ttyUSB0'
 
 
-LABEL_LIST2 = [
-    'Seonsor ID:',
-    'Connection:',
-    'Sequence_N:',
-    'People_NUM:',
-    'Average_PP:',
-    'Final_PNUM:'
-]
 
 class PageOne(wx.Panel):
     def __init__(self, parent):
@@ -119,10 +111,11 @@ class SensorReaderFrame(wx.Frame):
         
         hbox= wx.BoxSizer(wx.HORIZONTAL)
         self.linechart = xsp.PanelChart(self.bgPanel, 100)
+        gv.iChartPanel = self.linechart 
         hbox.Add(self.linechart, 1)
         #sizer = self.buildUISizer(self.bgPanel)
         #self.bgPanel.SetSizer(sizer)
-        self.infoPanel = PanelBaseInfo(self.bgPanel)
+        self.infoPanel = xsp.PanelBaseInfo(self.bgPanel)
         hbox.Add(self.infoPanel,1)
         self.bgPanel.SetSizer(hbox)
         
@@ -250,10 +243,9 @@ class SensorReaderFrame(wx.Frame):
         #    self.valueDispList[i].SetLabel(str(self.dataList[i]))
 
         #num = random.randint(0, 20)
-        self.linechart.addData(
+        self.linechart.AppendData(
             list((self.dataList[4], self.dataList[9], self.dataList[27])))
-        self.linechart.Refresh(True)
-        self.linechart.Update()
+        self.linechart.updateDisplay()
 
         dataList = (self.dataList[0],'COM1',self.dataList[3],self.dataList[4], self.dataList[9], self.dataList[27])
         self.infoPanel.updateData(dataList)

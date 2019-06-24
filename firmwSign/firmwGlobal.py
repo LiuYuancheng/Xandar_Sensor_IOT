@@ -79,5 +79,10 @@ SSSL_CERT_PATH = "".join([dirpath, "\\firmwSign\\testCert\\server.cert"])
 SIGN_CERT_PATH = "".join([dirpath, "\\firmwSign\\testCert\\certificate.pem"])
 SIGN_PRIV_PATH = "".join([dirpath, "\\firmwSign\\testCert\\private_key.pem"])
 
+#-----------------------------------------------------------------------------
+# Set the global reference here.
+
+iChartPanel = None 
+
 
 
