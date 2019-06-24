@@ -123,8 +123,9 @@ class SensorReaderFrame(wx.Frame):
 
         page1 = PageOne(nb)
         nb.AddPage(page1, "Sensor 2")
-        page2 = PageOne(nb)
-        nb.AddPage(page2, "Map")
+        self.page2 =xsp.MapPanel(nb)
+        self.page2.Refresh(True)
+        nb.AddPage(self.page2, "Map")
 
         sizer = wx.BoxSizer()
         sizer.Add(nb, 1, wx.EXPAND)
@@ -249,6 +250,10 @@ class SensorReaderFrame(wx.Frame):
 
         dataList = (self.dataList[0],'COM1',self.dataList[3],self.dataList[4], self.dataList[9], self.dataList[27])
         self.infoPanel.updateData(dataList)
+
+        self.page2.updateNum(self.dataList[27])
+        self.page2.updateDisplay()
+
  #-----------------------------------------------------------------------------
     def setSerialComm(self, searchFlag=False):
         """ Automatically search for the sensor and do the connection."""

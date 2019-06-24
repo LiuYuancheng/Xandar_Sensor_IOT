@@ -27,6 +27,68 @@ LABEL_LIST2 = [
     'Final_PNUM:'   # float
 ]
 
+
+class MapPanel(wx.Panel):
+    """ Draw the office top view with the data
+        background Image setting example may be useful in the future: 
+        http://www.blog.pythonlibrary.org/2010/03/18/wxpython-putting-a-background-image-on-a-panel/
+    """
+
+    def __init__(self, parent):
+        """ Init the panel.
+        """
+        wx.Panel.__init__(self, parent, size=(350, 300))
+        self.SetBackgroundColour(wx.Colour(200, 210, 200))
+        self.SetBackgroundColour(wx.Colour(200, 210, 200))
+        self.bitmap = wx.Bitmap(gv.BGPNG_PATH)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.pplNum = 0 
+
+    
+    def OnPaint(self, event):
+        dc = wx.PaintDC(self)
+        dc.DrawBitmap(self.bitmap, 1, 1)
+        dc.DrawBitmap(self.bitmap, 246, 1)
+        # Dc Draw the detection area.
+        dc.SetPen(wx.Pen('#0AB1FF', width=4, style=wx.PENSTYLE_DOT))
+        dc.DrawLine(3, 3, 123, 3)
+        dc.DrawLine(3, 3, 3, 137)
+        dc.DrawLine(123, 3, 123, 137)
+        dc.DrawLine(3, 137, 123, 137)
+
+        #dc.SetBrush(wx.Brush('#4c4c4c', wx.TRANSPARENT))
+        #dc.DrawRectangle(10, 10, 120, 135)
+
+        gdc = wx.GCDC(dc)
+
+        r = g = b = 120
+        brushclr = wx.Colour(r+self.pplNum*7, g-self.pplNum*7, b, 128)   # half transparent
+        gdc.SetBrush(wx.Brush(brushclr))
+        #rect = wx.Rect(0,0, 100, 100)
+        gdc.DrawRectangle(10 , 10, 110, 120)
+
+        #gc = wx.GraphicsContext.Create(dc)
+        #if gc:
+        #    # make a path that contains a circle and some lines
+        #    gc.SetPen(wx.RED_PEN)
+        #    gc.SetBrush(wx.Brush((250,0,0)))
+        #    path = gc.CreatePath()
+        #    path.AddRectangle(25.0, 25.0, 50.0, 50.0)
+        #    gc.FillPath(path)
+
+        #    gc.StrokePath(path)
+
+    def updateNum(self, number):
+        self.pplNum = int(number)
+
+    def updateDisplay(self, updateFlag=None):
+        """ Set/Update the display: if called as updateDisplay() the function will 
+            update the panel, if called as updateDisplay(updateFlag=?) the function will 
+            set the self update flag.
+        """
+        self.Refresh(True)
+        self.Update()
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelBaseInfo(wx.Panel):

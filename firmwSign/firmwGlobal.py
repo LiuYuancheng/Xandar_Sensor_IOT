@@ -35,6 +35,7 @@ RG_SERVER_CHOICE = {
 #UI window ICON.
 ICON_PATH = "".join([dirpath, "\\firmwSign\\singtelIcon.ico"])
 
+BGPNG_PATH = "".join([dirpath, "\\firmwSign\\TopView.png"])
 
 # Data received buffer size:
 BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
