@@ -35,48 +35,59 @@ class MapPanel(wx.Panel):
     """
 
     def __init__(self, parent):
-        """ Init the panel.
-        """
+        """ Init the panel."""
         wx.Panel.__init__(self, parent, size=(350, 300))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
-        self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.bitmap = wx.Bitmap(gv.BGPNG_PATH)
+        self.bitmapSZ = self.bitmap.GetSize()
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.pplNum = 0 
+        self.pplNum = 0
+        self.highLightIdx = 0
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
 
-    
     def OnPaint(self, event):
         dc = wx.PaintDC(self)
         dc.DrawBitmap(self.bitmap, 1, 1)
-        dc.DrawBitmap(self.bitmap, 246, 1)
         # Dc Draw the detection area.
-        dc.SetPen(wx.Pen('#0AB1FF', width=4, style=wx.PENSTYLE_DOT))
-        dc.DrawLine(3, 3, 123, 3)
-        dc.DrawLine(3, 3, 3, 137)
-        dc.DrawLine(123, 3, 123, 137)
-        dc.DrawLine(3, 137, 123, 137)
-
-        #dc.SetBrush(wx.Brush('#4c4c4c', wx.TRANSPARENT))
-        #dc.DrawRectangle(10, 10, 120, 135)
-
+        dc.SetPen(wx.Pen('RED', width=3, style=wx.PENSTYLE_DOT))
+        w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
+        self.DrawHighLight(dc,w, h)
+        # Draw the transparent rectangle to represent how many people in the area.
         gdc = wx.GCDC(dc)
-
         r = g = b = 120
-        brushclr = wx.Colour(r+self.pplNum*7, g-self.pplNum*7, b, 128)   # half transparent
+        brushclr = wx.Colour(r+self.pplNum*7, g, b, 128)   # half transparent
         gdc.SetBrush(wx.Brush(brushclr))
-        #rect = wx.Rect(0,0, 100, 100)
-        gdc.DrawRectangle(10 , 10, 110, 120)
+        gdc.DrawRectangle(1, 1, w, h)
+    
+    def DrawHighLight(self, dc, w, h):
+        """ High light the area user clicked"""
+        l, t, r, b, x_offset, y_offset = 1, 1, w, h, 0, 0
+        
+        if self.highLightIdx == 1:
+            x_offset = w
+        elif self.highLightIdx == 2:
+            y_offset = h
+        elif self.highLightIdx == 3:
+            x_offset = w
+            y_offset = h
 
-        #gc = wx.GraphicsContext.Create(dc)
-        #if gc:
-        #    # make a path that contains a circle and some lines
-        #    gc.SetPen(wx.RED_PEN)
-        #    gc.SetBrush(wx.Brush((250,0,0)))
-        #    path = gc.CreatePath()
-        #    path.AddRectangle(25.0, 25.0, 50.0, 50.0)
-        #    gc.FillPath(path)
+        dc.DrawLine(l+x_offset, t+y_offset, r+x_offset, t+y_offset)
+        dc.DrawLine(l+x_offset, t+y_offset, l+x_offset, b+y_offset)
+        dc.DrawLine(r+x_offset, t+y_offset, r+x_offset, b+y_offset)
+        dc.DrawLine(l+x_offset, b+y_offset, r+x_offset, b+y_offset)
 
-        #    gc.StrokePath(path)
+    def OnClick(self, event):
+        x, y = event.GetPosition()
+        w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
+        if x < w and y < h: 
+            self.highLightIdx = 0 
+        elif x >= w and y < h: 
+            self.highLightIdx = 1 
+        elif x <w and y >=h:
+            self.highLightIdx = 2
+        else:
+            self.highLightIdx = 3
+        self.updateDisplay()
 
     def updateNum(self, number):
         self.pplNum = int(number)
