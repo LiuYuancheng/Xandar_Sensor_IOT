@@ -12,6 +12,7 @@
 # License:     YC
 #-----------------------------------------------------------------------------
 import wx
+import wx.grid
 import time
 import random
 import firmwGlobal as gv 
@@ -28,15 +29,95 @@ LABEL_LIST2 = [
 ]
 
 
+class MutliInfoPanel(wx.Panel):
+
+    def __init__(self, parent):
+        """ Init the panel."""
+        wx.Panel.__init__(self, parent, size=(350, 300))
+        self.SetBackgroundColour(wx.Colour(200, 210, 200))
+        self.mapPanel = None
+        mainUISizer = self.buidUISizer()
+        self.SetSizer(mainUISizer)
+
+    def buidUISizer(self):
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
+        
+        flagsT = wx.RIGHT
+
+        sizer.AddSpacer(5)
+        self.mapPanel = MapPanel(self)
+        gv.iMapPanel = self.mapPanel
+        sizer.Add(self.mapPanel, flag=flagsR, border=2)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        vsizer.Add(wx.StaticText(self, label='Sensor Connection status:'),
+                   flag=flagsT, border=2)
+        
+        vsizer.AddSpacer(10)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        self.sen1S = wx.StaticText(self, label='Sensor 1'.center(10))
+        self.sen1S.SetBackgroundColour(wx.Colour('Green'))
+        hbox.Add(self.sen1S, flag=flagsR, border=2)
+
+        hbox.AddSpacer(5)
+
+        self.sen2S = wx.StaticText(self, label='Sensor 2'.center(10))
+        self.sen2S.SetBackgroundColour(wx.Colour(120, 120, 120))
+        hbox.Add(self.sen2S, flag=flagsR, border=2)
+
+        hbox.AddSpacer(5)
+
+        self.sen3S = wx.StaticText(self, label='Sensor 3'.center(10))
+        self.sen3S.SetBackgroundColour(wx.Colour(120, 120, 120))
+        hbox.Add(self.sen3S, flag=flagsR, border=2)
+
+        hbox.AddSpacer(5)
+
+        self.sen4S = wx.StaticText(self, label='Sensor 4'.center(10))
+        self.sen4S.SetBackgroundColour(wx.Colour(120, 120, 120))
+        hbox.Add(self.sen4S, flag=flagsR, border=2)
+
+        vsizer.Add(hbox, flag=flagsR, border=2)
+        
+        vsizer.AddSpacer(10)
+        vsizer.Add(wx.StaticText(self, label='Sensors FeedBack data:'),
+            flag=flagsT, border=2)
+
+        vsizer.AddSpacer(10)
+
+        self.grid = wx.grid.Grid(self, -1)
+
+        self.grid.CreateGrid(5, 3)
+        #self.grid.SetRowSize(0, 60)
+        self.grid.SetRowLabelSize(40)
+        
+        self.grid.SetColSize(0, 50)
+        self.grid.SetColSize(1, 65)
+        self.grid.SetColSize(2, 65)
+
+
+
+        self.grid.SetColLabelValue(0, 'Sen ID')
+        self.grid.SetColLabelValue(1, 'Crt NUM')
+        self.grid.SetColLabelValue(2, 'Avg NUM')
+
+        vsizer.Add(self.grid, flag=flagsR, border=2)
+
+        sizer.Add(vsizer, flag=flagsT, border=2)
+        return sizer
+
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 class MapPanel(wx.Panel):
     """ Draw the office top view with the data
         background Image setting example may be useful in the future: 
         http://www.blog.pythonlibrary.org/2010/03/18/wxpython-putting-a-background-image-on-a-panel/
     """
 
+    #-----------------------------------------------------------------------------
     def __init__(self, parent):
         """ Init the panel."""
-        wx.Panel.__init__(self, parent, size=(350, 300))
+        wx.Panel.__init__(self, parent, size=(240, 275))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.bitmap = wx.Bitmap(gv.BGPNG_PATH)
         self.bitmapSZ = self.bitmap.GetSize()
@@ -44,7 +125,9 @@ class MapPanel(wx.Panel):
         self.pplNum = 0
         self.highLightIdx = 0
         self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
+        self.toggle = True
 
+    #-----------------------------------------------------------------------------
     def OnPaint(self, event):
         dc = wx.PaintDC(self)
         dc.DrawBitmap(self.bitmap, 1, 1)
@@ -52,13 +135,22 @@ class MapPanel(wx.Panel):
         dc.SetPen(wx.Pen('RED', width=3, style=wx.PENSTYLE_DOT))
         w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
         self.DrawHighLight(dc,w, h)
+        # draw the sensor:
+
+        dc.SetPen(wx.Pen('blue', width=1, style=wx.PENSTYLE_SOLID))
+        color = wx.Colour("Blue") if self.toggle else wx.Colour("Red")
+        self.toggle = not self.toggle
+        dc.SetBrush(wx.Brush(color))
+        dc.DrawRectangle(112, 60, 11, 11)
+
         # Draw the transparent rectangle to represent how many people in the area.
         gdc = wx.GCDC(dc)
         r = g = b = 120
         brushclr = wx.Colour(r+self.pplNum*7, g, b, 128)   # half transparent
         gdc.SetBrush(wx.Brush(brushclr))
         gdc.DrawRectangle(1, 1, w, h)
-    
+
+    #-----------------------------------------------------------------------------
     def DrawHighLight(self, dc, w, h):
         """ High light the area user clicked"""
         l, t, r, b, x_offset, y_offset = 1, 1, w, h, 0, 0
@@ -76,6 +168,7 @@ class MapPanel(wx.Panel):
         dc.DrawLine(r+x_offset, t+y_offset, r+x_offset, b+y_offset)
         dc.DrawLine(l+x_offset, b+y_offset, r+x_offset, b+y_offset)
 
+    #-----------------------------------------------------------------------------
     def OnClick(self, event):
         x, y = event.GetPosition()
         w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
@@ -89,9 +182,11 @@ class MapPanel(wx.Panel):
             self.highLightIdx = 3
         self.updateDisplay()
 
+    #-----------------------------------------------------------------------------
     def updateNum(self, number):
         self.pplNum = int(number)
 
+    #-----------------------------------------------------------------------------
     def updateDisplay(self, updateFlag=None):
         """ Set/Update the display: if called as updateDisplay() the function will 
             update the panel, if called as updateDisplay(updateFlag=?) the function will 
@@ -156,7 +251,7 @@ class PanelBaseInfo(wx.Panel):
         for i, value in enumerate(dataList):
             dataStr = "{0:.2f}".format(value) if isinstance(
                 value, float) else str(value)
-            self.valueDispList[i].SetLabel(dataStr)
+            self.valueDispList[i].SetLabel("> "+dataStr)
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------

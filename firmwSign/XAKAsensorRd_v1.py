@@ -123,7 +123,8 @@ class SensorReaderFrame(wx.Frame):
 
         page1 = PageOne(nb)
         nb.AddPage(page1, "Sensor 2")
-        self.page2 =xsp.MapPanel(nb)
+
+        self.page2 =xsp.MutliInfoPanel(nb)
         self.page2.Refresh(True)
         nb.AddPage(self.page2, "Map")
 
@@ -251,8 +252,8 @@ class SensorReaderFrame(wx.Frame):
         dataList = (self.dataList[0],'COM1',self.dataList[3],self.dataList[4], self.dataList[9], self.dataList[27])
         self.infoPanel.updateData(dataList)
 
-        self.page2.updateNum(self.dataList[27])
-        self.page2.updateDisplay()
+        gv.iMapPanel.updateNum(self.dataList[27])
+        gv.iMapPanel.updateDisplay()
 
  #-----------------------------------------------------------------------------
     def setSerialComm(self, searchFlag=False):
