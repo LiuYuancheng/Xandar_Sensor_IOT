@@ -204,6 +204,8 @@ class SensorReaderFrame(wx.Frame):
         #if not self.activeFlag: return
         #for i in range(len(self.valueDispList)): 
         #    self.valueDispList[i].SetLabel(str(self.dataList[i]))
+        if gv.iDetailPanel:
+            gv.iDetailPanel.updateDisplay(self.dataList)
 
         #num = random.randint(0, 20)
         self.linechart.AppendData(
@@ -212,9 +214,11 @@ class SensorReaderFrame(wx.Frame):
 
         dataList = (self.dataList[0],'COM1',self.dataList[3],self.dataList[4], self.dataList[9], self.dataList[27])
         self.infoPanel.updateData(dataList)
+        self.page2.updateSensorGrid(0, (self.dataList[0], self.dataList[4], self.dataList[27]))
 
         gv.iMapPanel.updateNum(self.dataList[27])
         gv.iMapPanel.updateDisplay()
+
 
  #-----------------------------------------------------------------------------
     def setSerialComm(self, searchFlag=False):

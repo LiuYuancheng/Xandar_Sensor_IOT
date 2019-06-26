@@ -73,8 +73,36 @@ class DetailInfoPanel(wx.Panel):
     def __init__(self, parent):
         """ Init the panel."""
         wx.Panel.__init__(self, parent, size=(350, 300))
+        self.parent = parent
+        self.valueDispList = []     # value list will display on UI.
+        self.SetBackgroundColour(wx.Colour(200, 200, 200))
+        sizer = self.buildUISizer()
+        
+        self.SetSizer(sizer)
 
+    #-----------------------------------------------------------------------------
+    def buildUISizer(self):
+        """ build the UI sizer for the background panel."""
+        sizer = wx.GridSizer(len(DETAIL_LABEL_LIST)+2, 2, 4, 4)
+        # Add the title line.
+        sizer.Add(wx.Button(self, label='ParameterName ',
+                            size=(170, 18), style=wx.BU_LEFT, name='ParameterName'))
+        sizer.Add(wx.Button(self, label='FeedbackValue ', size=(
+            170, 18), style=wx.BU_LEFT, name='Value'))
+        # Add the display area.
+        for item in DETAIL_LABEL_LIST:
+            sizer.Add(wx.StaticText(self, -1, item))
+            datalabel = wx.StaticText(self, -1, '--')
+            self.valueDispList.append(datalabel)
+            sizer.Add(datalabel)
+        # Add the server selection and regist button.
+        #sizer.AddSpacer(5)
+        #sizer.AddSpacer(5)
+        return sizer
 
+    def updateDisplay(self, dataList):
+        for i in range(len(dataList)): 
+            self.valueDispList[i].SetLabel(str(dataList[i]))
 
 class MutliInfoPanel(wx.Panel):
 
@@ -83,6 +111,9 @@ class MutliInfoPanel(wx.Panel):
         wx.Panel.__init__(self, parent, size=(350, 300))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.mapPanel = None
+        self.totPllNum = 0 # total current number of people detected
+        self.totPllAvg = 0 # total avg number of people detected 
+        self.senIndList = [] # sensor indicator list.
         mainUISizer = self.buidUISizer()
         self.SetSizer(mainUISizer)
 
@@ -100,32 +131,20 @@ class MutliInfoPanel(wx.Panel):
         vsizer.Add(wx.StaticText(self, label='Sensor Connection status:'),
                    flag=flagsT, border=2)
         
+        
+
         vsizer.AddSpacer(10)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.sen1S = wx.StaticText(self, label='Sensor 1'.center(10))
-        self.sen1S.SetBackgroundColour(wx.Colour('Green'))
-        hbox.Add(self.sen1S, flag=flagsR, border=2)
 
-        hbox.AddSpacer(5)
-
-        self.sen2S = wx.StaticText(self, label='Sensor 2'.center(10))
-        self.sen2S.SetBackgroundColour(wx.Colour(120, 120, 120))
-        hbox.Add(self.sen2S, flag=flagsR, border=2)
-
-        hbox.AddSpacer(5)
-
-        self.sen3S = wx.StaticText(self, label='Sensor 3'.center(10))
-        self.sen3S.SetBackgroundColour(wx.Colour(120, 120, 120))
-        hbox.Add(self.sen3S, flag=flagsR, border=2)
-
-        hbox.AddSpacer(5)
-
-        self.sen4S = wx.StaticText(self, label='Sensor 4'.center(10))
-        self.sen4S.SetBackgroundColour(wx.Colour(120, 120, 120))
-        hbox.Add(self.sen4S, flag=flagsR, border=2)
+        for i in range(4):
+            sen1S = wx.StaticText(self, label=str('Sensor '+str(i)).center(10))
+            self.senIndList.append(sen1S)
+            sen1S.SetBackgroundColour(wx.Colour(120, 120, 120))
+            hbox.Add(sen1S, flag=flagsR, border=2)
+            hbox.AddSpacer(5)
+        self.updateSensorIndicator(0, 1)
 
         vsizer.Add(hbox, flag=flagsR, border=2)
-        
         vsizer.AddSpacer(10)
         vsizer.Add(wx.StaticText(self, label='Sensors FeedBack data:'),
             flag=flagsT, border=2)
@@ -142,16 +161,49 @@ class MutliInfoPanel(wx.Panel):
         self.grid.SetColSize(1, 65)
         self.grid.SetColSize(2, 65)
 
-
-
         self.grid.SetColLabelValue(0, 'Sen ID')
         self.grid.SetColLabelValue(1, 'Crt NUM')
         self.grid.SetColLabelValue(2, 'Avg NUM')
+        self.grid.SetRowLabelValue(4, 'Tot')
+
+
+        self.grid.Bind(wx.grid.EVT_GRID_LABEL_LEFT_CLICK, self.highLightMap)
 
         vsizer.Add(self.grid, flag=flagsR, border=2)
 
         sizer.Add(vsizer, flag=flagsT, border=2)
         return sizer
+
+    def updateSensorIndicator(self, idx, state):
+        color = wx.Colour("Green") if state else  wx.Colour(120, 120, 120)
+        self.senIndList[idx].SetBackgroundColour(color)
+
+    def updateSensorGrid(self, idx, dataList): 
+        if len(dataList) != 3:
+            return
+        for i, item in enumerate(dataList):
+            dataStr = "{0:.4f}".format(item) if isinstance(
+                item, float) else str(item)
+            self.grid.SetCellValue(idx, i, dataStr)
+            if i == 1: self.totPllNum += item
+            if i == 2: self.totPllAvg += item
+        
+        # update the totle 
+        self.grid.SetCellValue(4, 0, str(1))
+        self.grid.SetCellValue(4, 1, "{0:.4f}".format(self.totPllNum))
+        self.grid.SetCellValue(4, 2, "{0:.4f}".format(self.totPllAvg))
+        self.grid.ForceRefresh() # refresh all the grid's cell at one time ? 
+        self.totPllNum = self.totPllAvg = 0
+
+    def markSensorRow(self, idx):
+        """ Mark the selected row.
+        """
+        self.grid.SelectRow(idx)
+
+    def highLightMap(self, event):
+        row_index = event.GetRow()
+        self.grid.SelectRow(row_index)
+        self.mapPanel.highLightIdx = row_index 
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -179,7 +231,8 @@ class MapPanel(wx.Panel):
         dc = wx.PaintDC(self)
         dc.DrawBitmap(self.bitmap, 1, 1)
         # Dc Draw the detection area.
-        dc.SetPen(wx.Pen('RED', width=3, style=wx.PENSTYLE_DOT))
+        penColor = 'BLUE' if self.toggle else 'RED'
+        dc.SetPen(wx.Pen(penColor, width=3, style=wx.PENSTYLE_DOT))
         w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
         self.DrawHighLight(dc,w, h)
         # draw the sensor:
@@ -193,7 +246,8 @@ class MapPanel(wx.Panel):
         # Draw the transparent rectangle to represent how many people in the area.
         gdc = wx.GCDC(dc)
         r = g = b = 120
-        brushclr = wx.Colour(r+self.pplNum*7, g, b, 128)   # half transparent
+        r = r+self.pplNum*7 if r+self.pplNum*7 < 255 else 254
+        brushclr = wx.Colour(r, g, b, 128)   # half transparent
         gdc.SetBrush(wx.Brush(brushclr))
         gdc.DrawRectangle(1, 1, w, h)
 
@@ -228,6 +282,7 @@ class MapPanel(wx.Panel):
         else:
             self.highLightIdx = 3
         self.updateDisplay()
+        self.Parent.markSensorRow(self.highLightIdx )
 
     #-----------------------------------------------------------------------------
     def updateNum(self, number):
@@ -290,10 +345,10 @@ class PanelBaseInfo(wx.Panel):
         pass
         if self.infoWindow is None and gv.iDetailPanel is None:
             #posF =[ n+600 for n in gv.iMainFrame.GetClientAreaOrigin()]
-            posF = gv.iMainFrame.GetClientAreaOrigin()
+            posF = gv.iMainFrame.GetPosition()
             self.infoWindow = wx.MiniFrame(gv.iMainFrame, -1,
                 'Detail Sensor Info', pos=(posF[0]+486, posF[1]),
-                size=(450, 700),
+                size=(350, 700),
                 style=wx.DEFAULT_FRAME_STYLE)
 
             gv.iDetailPanel = DetailInfoPanel(self.infoWindow)
