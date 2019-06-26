@@ -61,7 +61,7 @@ DETAIL_LABEL_LIST = [
 ]
 # Basic information label.
 CHART_LABEL_LIST = [
-    'Seonsor ID:',  # int
+    'Sensor ID:',  # int
     'Connection:',  # str
     'Sequence_N:',  # float
     'People_NUM:',  # float

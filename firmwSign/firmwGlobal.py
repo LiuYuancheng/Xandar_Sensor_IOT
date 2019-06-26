@@ -83,7 +83,7 @@ SIGN_PRIV_PATH = "".join([dirpath, "\\firmwSign\\testCert\\private_key.pem"])
 #-----------------------------------------------------------------------------
 # Set the global reference here.
 
-iChartPanel = None 
-iMapPanel = None
-iDetailPanel = None
-iMainFrame = None
+iChartPanel = None      # History chart panel
+iMapPanel = None        # Monitor area map panel
+iDetailPanel = None     # Detail informaiton display panel
+iMainFrame = None       # Program main frame
