@@ -68,8 +68,48 @@ CHART_LABEL_LIST = [
     'Average_PP:',  # float
     'Final_PNUM:'   # float
 ]
+class PanelSetup(wx.Panel):
+    """ Panel to handle the program setup."""
+    def __init__(self, parent):
+        """ Init the panel."""
+        wx.Panel.__init__(self, parent, size=(350, 300))
+        self.SetBackgroundColour(wx.Colour(200, 210, 200))
+        flagsT = wx.RIGHT
+        flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
 
-class DetailInfoPanel(wx.Panel):
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        vsizer.AddSpacer(10)
+        vsizer.Add(wx.StaticText(self, label='Sensor Registration Setting:'),
+                   flag=flagsT, border=2)
+        
+        vsizer.AddSpacer(10)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.serverchoice = wx.Choice(
+            self, -1, size=(150, 23), choices=list(gv.RG_SERVER_CHOICE.keys()), name='Server')
+        self.serverchoice.SetSelection(0)
+        hbox.Add(self.serverchoice, flag=flagsR, border=2)
+        hbox.AddSpacer(5)
+        self.regBt = wx.Button(self, label='Sensor registration.', size=(150, 23))
+        self.regBt.Bind(wx.EVT_BUTTON, self.logtoServer)
+        hbox.Add(self.regBt, flag=flagsR, border=2)
+        hbox.AddSpacer(5)
+        self.sgSimuBt = wx.Button(self, label='Sigature Simulation.', size=(150, 23))
+        self.sgSimuBt.Bind(wx.EVT_BUTTON, self.sigaSimuInput)
+        hbox.Add(self.sgSimuBt, flag=flagsR, border=2)
+        vsizer.Add(hbox, flag=flagsR, border=2)
+        self.SetSizer(vsizer)
+
+    def logtoServer(self, event):
+        ServerName = self.serverchoice.GetString(self.serverchoice.GetSelection())
+        if gv.iMainFrame:
+            gv.iMainFrame.logtoServer(ServerName)
+
+    def sigaSimuInput(self, event):
+        if gv.iMainFrame:
+            gv.iMainFrame.sigaSimuInput(event)
+        
+class PanelDetailInfo(wx.Panel):
     def __init__(self, parent):
         """ Init the panel."""
         wx.Panel.__init__(self, parent, size=(350, 300))
@@ -104,7 +144,7 @@ class DetailInfoPanel(wx.Panel):
         for i in range(len(dataList)): 
             self.valueDispList[i].SetLabel(str(dataList[i]))
 
-class MutliInfoPanel(wx.Panel):
+class PanelMutliInfo(wx.Panel):
 
     def __init__(self, parent):
         """ Init the panel."""
@@ -124,7 +164,7 @@ class MutliInfoPanel(wx.Panel):
         flagsT = wx.RIGHT
 
         sizer.AddSpacer(5)
-        self.mapPanel = MapPanel(self)
+        self.mapPanel = PanelMap(self)
         gv.iMapPanel = self.mapPanel
         sizer.Add(self.mapPanel, flag=flagsR, border=2)
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -207,7 +247,7 @@ class MutliInfoPanel(wx.Panel):
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
-class MapPanel(wx.Panel):
+class PanelMap(wx.Panel):
     """ Draw the office top view with the data
         background Image setting example may be useful in the future: 
         http://www.blog.pythonlibrary.org/2010/03/18/wxpython-putting-a-background-image-on-a-panel/
@@ -232,7 +272,7 @@ class MapPanel(wx.Panel):
         dc.DrawBitmap(self.bitmap, 1, 1)
         # Dc Draw the detection area.
         penColor = 'BLUE' if self.toggle else 'RED'
-        dc.SetPen(wx.Pen(penColor, width=3, style=wx.PENSTYLE_DOT))
+        dc.SetPen(wx.Pen(penColor, width=2, style=wx.PENSTYLE_LONG_DASH))
         w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
         self.DrawHighLight(dc,w, h)
         # draw the sensor:
@@ -351,7 +391,7 @@ class PanelBaseInfo(wx.Panel):
                 size=(350, 700),
                 style=wx.DEFAULT_FRAME_STYLE)
 
-            gv.iDetailPanel = DetailInfoPanel(self.infoWindow)
+            gv.iDetailPanel = PanelDetailInfo(self.infoWindow)
             self.infoWindow.Bind(wx.EVT_CLOSE, self.displayTargetClose)
             self.infoWindow.Show()
 

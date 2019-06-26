@@ -28,19 +28,19 @@ import firmwTLSclient as SSLC
 import firmwGlobal as gv
 import XAKAsensorPanel as xsp
 
-
-
 PERIODIC = 500 # how many ms the periodic call back
 SENSOR_TYPE = 'XKAK_PPL_COUNT' # defualt sensor type.
 # defualt comm name.
 DE_COMM = 'COM3' if platform.system() == 'Windows' else '/dev/ttyUSB0'
 
 
+class PanelPlaceHolder(wx.Panel):
+    """ Place Holder Panel"""
 
-class PageOne(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
-        t = wx.StaticText(self, -1, "Add more sensor here", (20,20))
+        self.SetBackgroundColour(wx.Colour(200, 200, 200))
+        wx.StaticText(self, -1, "Place Holder: Add more sensor here", (20, 20))
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -51,7 +51,7 @@ class SensorReaderFrame(wx.Frame):
         wx.Frame.__init__(self, parent, id, title, size=(500, 360))
         self.SetIcon(wx.Icon(gv.ICON_PATH))
         self.SetBackgroundColour('white')
-
+        gv.iMainFrame = self
         # Init parameters.
         self.activeFlag = False     # whether we active the sensor data reading.
         self.dataList = []          # list to store the sensor data.
@@ -63,7 +63,6 @@ class SensorReaderFrame(wx.Frame):
         # Init the UI.
         p = wx.Panel(self)
         nb = wx.Notebook(p)
-
 
         self.bgPanel = wx.Panel(nb)
         self.bgPanel.SetBackgroundColour(wx.Colour(200, 210, 200))
@@ -82,12 +81,16 @@ class SensorReaderFrame(wx.Frame):
         
         nb.AddPage(self.bgPanel, "Sensor 1")
 
-        page1 = PageOne(nb)
+        page1 = PanelPlaceHolder(nb)
         nb.AddPage(page1, "Sensor 2")
 
-        self.page2 =xsp.MutliInfoPanel(nb)
+        self.page2 =xsp.PanelMutliInfo(nb)
         self.page2.Refresh(True)
         nb.AddPage(self.page2, "Map")
+
+
+        self.setupPanel = xsp.PanelSetup(nb)
+        nb.AddPage(self.setupPanel, "Setting")
 
         sizer = wx.BoxSizer()
         sizer.Add(nb, 1, wx.EXPAND)
@@ -144,12 +147,10 @@ class SensorReaderFrame(wx.Frame):
         return sizer
 
 #-----------------------------------------------------------------------------
-    def logtoServer(self, event):
+    def logtoServer(self, ServerName):
         """ Login to the server and register the sensor."""
         try:
             # Connect to the selected server. 
-            ServerName = self.serverchoice.GetString(
-            self.serverchoice.GetSelection())
             ip, port = gv.RG_SERVER_CHOICE[ServerName]
             self.sslClient.connect((ip, port))
             # send connect request cmd.
@@ -253,7 +254,8 @@ class SensorReaderFrame(wx.Frame):
         except:
             print("Serial connection: serial port open error")
             return None
-    
+
+
  #-----------------------------------------------------------------------------
     def sigaSimuInput(self, event):
         """ Input the sigature used for simulation.
@@ -271,8 +273,8 @@ class SensorReaderFrame(wx.Frame):
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):
     def OnInit(self):
-        gv.iMainFrame = SensorReaderFrame(None, -1, 'XAKA People Counting Sensor_v1.0')
-        gv.iMainFrame.Show(True)
+        mainFrame = SensorReaderFrame(None, -1, 'XAKA People Counting Sensor_v1.0')
+        mainFrame.Show(True)
         return True
 
 app = MyApp(0)
