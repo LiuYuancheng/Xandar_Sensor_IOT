@@ -33,15 +33,6 @@ SENSOR_TYPE = 'XKAK_PPL_COUNT' # defualt sensor type.
 # defualt comm name.
 DE_COMM = 'COM3' if platform.system() == 'Windows' else '/dev/ttyUSB0'
 
-
-class PanelPlaceHolder(wx.Panel):
-    """ Place Holder Panel"""
-
-    def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
-        self.SetBackgroundColour(wx.Colour(200, 200, 200))
-        wx.StaticText(self, -1, "Place Holder: Add more sensor here", (20, 20))
-
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class SensorReaderFrame(wx.Frame):
@@ -50,51 +41,42 @@ class SensorReaderFrame(wx.Frame):
         """ Init the UI and parameters """
         wx.Frame.__init__(self, parent, id, title, size=(500, 360))
         self.SetIcon(wx.Icon(gv.ICON_PATH))
-        self.SetBackgroundColour('white')
+        self.SetBackgroundColour(wx.Colour(200, 210, 200))
         gv.iMainFrame = self
         # Init parameters.
         self.activeFlag = False     # whether we active the sensor data reading.
         self.dataList = []          # list to store the sensor data.
-        self.valueDispList = []     # value list will display on UI.
         self.senId = self.version = self.sensorType = ''
         self.signature = '44c88023c0a6da30e78e1e699d01436cbf987f06213d15b64e0a972952fbd0a3ec578d33a67d34024e8851b776d7af7999f5f175c896c363ed4a93f6cd104a454eb8a48ab32da07489c1daee6614a45561c8823e462e72ce458a78e3f35f68ae157a027d165eb7dec9c8910af34723a9e14132943a9788bfbdc2c904d2207c6a36e92e647c3b450d14697856c2906f94b122a3a01966d48f72f3b29f8472a24813f471be288522ee68ad7de57ec9551722aa9dafdba991516535e618c8a3a94907ca7a46ff11e27bb254497a306685066a86c34eaa572cbf4ab44eaef0829ff1d6f0490ab8d0dece01cf031eda5a1f2690e8579b4cad5cf650846ed6bd4085db'
         self.serialPort = DE_COMM # The serial port name we are going to read.
         self.ser = None # serial comm port used to read the sensor data. 
         # Init the UI.
-        p = wx.Panel(self)
-        nb = wx.Notebook(p)
-
-        self.bgPanel = wx.Panel(nb)
-        self.bgPanel.SetBackgroundColour(wx.Colour(200, 210, 200))
-        
-        flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
-        
-        hbox= wx.BoxSizer(wx.HORIZONTAL)
-        self.linechart = xsp.PanelChart(self.bgPanel, 100)
-        gv.iChartPanel = self.linechart 
-        hbox.Add(self.linechart, 1)
-        #sizer = self.buildUISizer(self.bgPanel)
-        #self.bgPanel.SetSizer(sizer)
-        self.infoPanel = xsp.PanelBaseInfo(self.bgPanel)
-        hbox.Add(self.infoPanel,1)
-        self.bgPanel.SetSizer(hbox)
-        
-        nb.AddPage(self.bgPanel, "Sensor 1")
-
-        page1 = PanelPlaceHolder(nb)
-        nb.AddPage(page1, "Sensor 2")
-
-        self.page2 =xsp.PanelMutliInfo(nb)
-        self.page2.Refresh(True)
-        nb.AddPage(self.page2, "Map")
-
-
+        bgPanel = wx.Panel(self) # background panel.
+        bgPanel.SetBackgroundColour(wx.Colour(200, 210, 200))        
+        nb = wx.Notebook(bgPanel)
+        # Set the NoteBook page 1(sensor 1)
+        PanelBgPg1 = wx.Panel(nb)
+        hboxPg1= wx.BoxSizer(wx.HORIZONTAL)
+        self.linechart = xsp.PanelChart(PanelBgPg1, 100)
+        gv.iChartPanel = self.linechart
+        hboxPg1.Add(self.linechart, 1)
+        self.infoPanel = xsp.PanelBaseInfo(PanelBgPg1)
+        hboxPg1.Add(self.infoPanel,1)
+        PanelBgPg1.SetSizer(hboxPg1)
+        nb.AddPage(PanelBgPg1, "Sensor-1")
+        # Set the NoteBook page 2(sensor N)
+        page2 = xsp.PanelPlaceHolder(nb)
+        nb.AddPage(page2, "Sensor-2")
+        # Set the NoteBook page 3(All sensor information.)
+        self.multiInfoPg =xsp.PanelMultInfo(nb)
+        nb.AddPage(self.multiInfoPg, "Multi-Info")
+        # Set the NoteBook sage 4(Setting)
         self.setupPanel = xsp.PanelSetup(nb)
         nb.AddPage(self.setupPanel, "Setting")
-
+    
         sizer = wx.BoxSizer()
         sizer.Add(nb, 1, wx.EXPAND)
-        p.SetSizer(sizer)
+        bgPanel.SetSizer(sizer)
 
         self.statusbar = self.CreateStatusBar(1)
         self.statusbar.SetStatusText('Regist the connected sensor first.')
@@ -113,38 +95,6 @@ class SensorReaderFrame(wx.Frame):
         self.timer.Start(PERIODIC)  # every 500 ms
         # Add Close event here.
         self.Bind(wx.EVT_CLOSE, self.OnClose)
-
-#-----------------------------------------------------------------------------
-    def buildUISizer(self, bgPanel):
-        """ build the UI sizer for the background panel."""
-        sizer = wx.GridSizer(len(LABEL_LIST)+4, 2, 4, 4)
-        # Add the title line.
-        sizer.Add(wx.Button(bgPanel, label='ParameterName ',
-                            size=(195, 18), style=wx.BU_LEFT, name='ParameterName'))
-        sizer.Add(wx.Button(bgPanel, label='FeedbackValue ', size=(
-            195, 18), style=wx.BU_LEFT, name='Value'))
-        # Add the display area.
-        for item in LABEL_LIST:
-            sizer.Add(wx.StaticText(bgPanel, -1, item))
-            datalabel = wx.StaticText(bgPanel, -1, '--')
-            self.valueDispList.append(datalabel)
-            sizer.Add(datalabel)
-        # Add the server selection and regist button.
-        self.serverchoice = wx.Choice(
-            bgPanel, -1, size=(190, 20), choices=list(gv.RG_SERVER_CHOICE.keys()), name='Server')
-        self.serverchoice.SetSelection(0)
-        sizer.Add(self.serverchoice)
-        self.regBt = wx.Button(bgPanel, label='Sensor registration.', size=(190, 23))
-        self.regBt.Bind(wx.EVT_BUTTON, self.logtoServer)
-        sizer.Add(self.regBt)
-        #sizer.Add(wx.StaticText(bgPanel, -1, 'Simulation setting:'))
-        sizer.AddSpacer(5)
-        sizer.AddSpacer(5)
-        # Added the siganature simution active button.
-        self.sgSimuBt = wx.Button(bgPanel, label='Sigature Simulation.', size=(190, 23))
-        self.sgSimuBt.Bind(wx.EVT_BUTTON, self.sigaSimuInput)
-        sizer.Add(self.sgSimuBt)
-        return sizer
 
 #-----------------------------------------------------------------------------
     def logtoServer(self, ServerName):
@@ -201,25 +151,9 @@ class SensorReaderFrame(wx.Frame):
                     self.dataList.append(val[0])
         self.senId, self.version = self.dataList[0], self.dataList[8]
         self.sensorType = SENSOR_TYPE
-        # Update the UI if the sensor registed successfully.
         #if not self.activeFlag: return
-        #for i in range(len(self.valueDispList)): 
-        #    self.valueDispList[i].SetLabel(str(self.dataList[i]))
-        if gv.iDetailPanel:
-            gv.iDetailPanel.updateDisplay(self.dataList)
-
-        #num = random.randint(0, 20)
-        self.linechart.AppendData(
-            list((self.dataList[4], self.dataList[9], self.dataList[27])))
-        self.linechart.updateDisplay()
-
-        dataList = (self.dataList[0],'COM1',self.dataList[3],self.dataList[4], self.dataList[9], self.dataList[27])
-        self.infoPanel.updateData(dataList)
-        self.page2.updateSensorGrid(0, (self.dataList[0], self.dataList[4], self.dataList[27]))
-
-        gv.iMapPanel.updateNum(self.dataList[27])
-        gv.iMapPanel.updateDisplay()
-
+        # Update the UI if the sensor registed successfully.
+        self.updateUIPanels()
 
  #-----------------------------------------------------------------------------
     def setSerialComm(self, searchFlag=False):
@@ -255,7 +189,6 @@ class SensorReaderFrame(wx.Frame):
             print("Serial connection: serial port open error")
             return None
 
-
  #-----------------------------------------------------------------------------
     def sigaSimuInput(self, event):
         """ Input the sigature used for simulation.
@@ -264,7 +197,28 @@ class SensorReaderFrame(wx.Frame):
         dlg.CentreOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             self.signature=dlg.GetValue()
-            
+
+#-----------------------------------------------------------------------------
+    def updateUIPanels(self):
+        """ Update the UI of all the Panels"""
+        # Update the sensor detail information frame.
+        if gv.iDetailPanel:
+            gv.iDetailPanel.updateDisplay(self.dataList)
+        # Update the sensor history line chart.
+        self.linechart.appendData(
+            list((self.dataList[4], self.dataList[9], self.dataList[27])))
+        self.linechart.updateDisplay()
+        # Update the basic information panel.
+        dataList = (self.dataList[0], self.serialPort, self.dataList[3],
+                    self.dataList[4], self.dataList[9], self.dataList[27])
+        self.infoPanel.updateData(dataList)
+        # Update the multi-information panel Grid.
+        self.multiInfoPg.updateSensorGrid(
+            0, (self.dataList[0], self.dataList[4], self.dataList[27]))
+        # Update the top view map panel.
+        gv.iMapPanel.updateNum(self.dataList[27])
+        gv.iMapPanel.updateDisplay()
+
 #-----------------------------------------------------------------------------
     def OnClose(self, event):
         #self.ser.close()
