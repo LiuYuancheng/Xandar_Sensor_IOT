@@ -85,5 +85,5 @@ SIGN_PRIV_PATH = "".join([dirpath, "\\firmwSign\\testCert\\private_key.pem"])
 
 iChartPanel = None 
 iMapPanel = None
-
-
+iDetailPanel = None
+iMainFrame = None

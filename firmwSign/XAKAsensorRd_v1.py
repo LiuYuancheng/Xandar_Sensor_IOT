@@ -29,46 +29,7 @@ import firmwGlobal as gv
 import XAKAsensorPanel as xsp
 
 
-# People counting sensor message labels
-LABEL_LIST = [
-    'Seonsor ID: ',
-    'Parameter Count:',
-    'Presence Info:',
-    '00: Sequence',
-    '01: Idx People count',
-    '02: Reserved',
-    '03: Reserved',
-    '04: Human Presence',
-    '05: Program Version',
-    '06: ShortTerm avg',
-    '07: LongTerm avg',
-    '08: EnvMapping rm T',
-    '09: Radar Map rm T',
-    '10: Idx for radar mapping',
-    '11: Num of ppl for radar map',
-    '12: Device ID',
-    '13: Start Rng',
-    '14: End Rng',
-    '15: Reserved',
-    '16: LED on/off',
-    '17: Trans period',
-    '18: Calib factor',
-    '19: Tiled Angle',
-    '20: Radar Height',
-    '21: Avg size',
-    '22: Presence on/off',
-    '23: Reserved',
-    '24: Final ppl num',
-    '25: Radar MP val',
-    '26: Env MP val',
-    '27: serial num_1',
-    '28: serial num_2',
-    '29: serial dist1',
-    '30: serial dist2',
-    '31: Reserved',
-    '32: Reserved',
-    '33: Reserved'
-]
+
 PERIODIC = 500 # how many ms the periodic call back
 SENSOR_TYPE = 'XKAK_PPL_COUNT' # defualt sensor type.
 # defualt comm name.
@@ -306,8 +267,8 @@ class SensorReaderFrame(wx.Frame):
 #-----------------------------------------------------------------------------
 class MyApp(wx.App):
     def OnInit(self):
-        frame = SensorReaderFrame(None, -1, 'XAKA People Counting Sensor_v1.0')
-        frame.Show(True)
+        gv.iMainFrame = SensorReaderFrame(None, -1, 'XAKA People Counting Sensor_v1.0')
+        gv.iMainFrame.Show(True)
         return True
 
 app = MyApp(0)

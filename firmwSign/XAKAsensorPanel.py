@@ -19,7 +19,48 @@ import firmwGlobal as gv
 
 PERIODIC = 500  # how many ms the periodic call back
 
-LABEL_LIST2 = [
+# People counting sensor message labels
+DETAIL_LABEL_LIST = [
+    'Seonsor ID: ',
+    'Parameter Count:',
+    'Presence Info:',
+    '00: Sequence',
+    '01: Idx People count',
+    '02: Reserved',
+    '03: Reserved',
+    '04: Human Presence',
+    '05: Program Version',
+    '06: ShortTerm avg',
+    '07: LongTerm avg',
+    '08: EnvMapping rm T',
+    '09: Radar Map rm T',
+    '10: Idx for radar mapping',
+    '11: Num of ppl for radar map',
+    '12: Device ID',
+    '13: Start Rng',
+    '14: End Rng',
+    '15: Reserved',
+    '16: LED on/off',
+    '17: Trans period',
+    '18: Calib factor',
+    '19: Tiled Angle',
+    '20: Radar Height',
+    '21: Avg size',
+    '22: Presence on/off',
+    '23: Reserved',
+    '24: Final ppl num',
+    '25: Radar MP val',
+    '26: Env MP val',
+    '27: serial num_1',
+    '28: serial num_2',
+    '29: serial dist1',
+    '30: serial dist2',
+    '31: Reserved',
+    '32: Reserved',
+    '33: Reserved'
+]
+
+CHART_LABEL_LIST = [
     'Seonsor ID:',  # int
     'Connection:',  # str
     'Sequence_N:',  # float
@@ -27,6 +68,12 @@ LABEL_LIST2 = [
     'Average_PP:',  # float
     'Final_PNUM:'   # float
 ]
+
+class DetailInfoPanel(wx.Panel):
+    def __init__(self, parent):
+        """ Init the panel."""
+        wx.Panel.__init__(self, parent, size=(350, 300))
+
 
 
 class MutliInfoPanel(wx.Panel):
@@ -203,11 +250,12 @@ class PanelBaseInfo(wx.Panel):
         wx.Panel.__init__(self, parent, size=(100, 300))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.valueDispList = []
+        self.infoWindow = None
         flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.AddSpacer(20)
         # Information rows
-        for item in LABEL_LIST2:
+        for item in CHART_LABEL_LIST:
             sizer.Add(wx.StaticText(self, -1, item))
             datalabel = wx.StaticText(self, -1, '--')
             self.valueDispList.append(datalabel)
@@ -240,13 +288,33 @@ class PanelBaseInfo(wx.Panel):
         """ pop up the detail window to show the information.
         """
         pass
+        if self.infoWindow is None and gv.iDetailPanel is None:
+            #posF =[ n+600 for n in gv.iMainFrame.GetClientAreaOrigin()]
+            posF = gv.iMainFrame.GetClientAreaOrigin()
+            self.infoWindow = wx.MiniFrame(gv.iMainFrame, -1,
+                'Detail Sensor Info', pos=(posF[0]+486, posF[1]),
+                size=(450, 700),
+                style=wx.DEFAULT_FRAME_STYLE)
 
-    #-----------------------------------------------------------------------------
+            gv.iDetailPanel = DetailInfoPanel(self.infoWindow)
+            self.infoWindow.Bind(wx.EVT_CLOSE, self.displayTargetClose)
+            self.infoWindow.Show()
+
+
+    def displayTargetClose(self, event):        # pylint: disable=W0613
+        """ Close display target info window and clear the tracked target.
+        """
+        if self.infoWindow:
+            self.infoWindow.Destroy()
+            self.infoWindow = None
+            gv.iDetailPanel = None
+ 
+   #-----------------------------------------------------------------------------
     def updateData(self, dataList):
         """ Update the data display on the panel. Input parameter sequence and 
             type follow <LABEL_LIST2>. 
         """
-        if len(dataList) != len(LABEL_LIST2):
+        if len(dataList) != len(CHART_LABEL_LIST):
             return
         for i, value in enumerate(dataList):
             dataStr = "{0:.2f}".format(value) if isinstance(
