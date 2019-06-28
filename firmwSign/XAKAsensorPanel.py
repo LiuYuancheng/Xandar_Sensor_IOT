@@ -389,10 +389,10 @@ class PanelMultInfo(wx.Panel):
         wx.Panel.__init__(self, parent, size=(350, 300))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.mapPanel = None
-        self.sensorCount = 1 # total sensor count.
-        self.totPllNum = 0 # total current number of people detected
-        self.totPllAvg = 0 # total avg number of people detected 
-        self.senIndList = [] # sensor indicator list.
+        self.sensorCount = 1    # total sensor count.
+        self.totPllNum = 0      # total current number of people detected
+        self.totPllAvg = 0      # total avg number of people detected 
+        self.senIndList = []    # sensor indicator list.
         mainUISizer = self.buidUISizer()
         self.SetSizer(mainUISizer)
 

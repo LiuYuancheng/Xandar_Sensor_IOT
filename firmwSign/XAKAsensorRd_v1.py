@@ -52,7 +52,8 @@ class SensorReaderFrame(wx.Frame):
         self.ser = None # serial comm port used to read the sensor data. 
         # Init the UI.
         bgPanel = wx.Panel(self) # background panel.
-        bgPanel.SetBackgroundColour(wx.Colour(200, 210, 200))        
+        bgPanel.SetBackgroundColour(wx.Colour(200, 210, 200))
+        sizer = wx.BoxSizer(wx.HORIZONTAL)    
         nb = wx.Notebook(bgPanel)
         # Set the NoteBook page 1(sensor 1)
         PanelBgPg1 = wx.Panel(nb)
@@ -73,8 +74,6 @@ class SensorReaderFrame(wx.Frame):
         # Set the NoteBook sage 4(Setting)
         self.setupPanel = xsp.PanelSetup(nb)
         nb.AddPage(self.setupPanel, "Setting")
-    
-        sizer = wx.BoxSizer()
         sizer.Add(nb, 1, wx.EXPAND)
         bgPanel.SetSizer(sizer)
 
