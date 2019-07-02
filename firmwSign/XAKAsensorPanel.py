@@ -212,7 +212,7 @@ class PanelChart(wx.Panel):
     def drawFG(self, dc):
         """ Draw the front ground data chart line."""
         color = ('#0AB1FF', '#CE8349', '#A5CDAA')
-        label = ("Cur_N", "Avg_N", "Fnl_N")
+        label = ("Crt_N", "Avg_N", "Fnl_N")
         for idx in range(3):
             # Draw the line sample.
             dc.SetPen(wx.Pen(color[idx], width=2, style=wx.PENSTYLE_SOLID))
