@@ -14,6 +14,9 @@ import os
 dirpath = os.getcwd()
 print("Current working directory is : %s" %dirpath)
 
+# Application name and version. setting
+APP_NAME = 'XAKA People Counting Sensor_v1.1'
+
 # Server ip and port for connection: 
 LOCAL_IP = '127.0.0.1'
 SITCP_PORT = 5005   # port for firmware sign request.
