@@ -22,7 +22,7 @@ import serial
 import threading
 import random
 
-from struct import *
+from struct import unpack
 from functools import partial
 
 import firmwMsgMgr
