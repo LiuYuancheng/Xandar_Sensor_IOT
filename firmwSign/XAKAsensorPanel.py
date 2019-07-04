@@ -2,13 +2,13 @@
 #-----------------------------------------------------------------------------
 # Name:        XAKAsensorPanel.py
 #
-# Purpose:     This module is used to provide differentfunction panels for the 
+# Purpose:     This module is used to provide different function panels for the 
 #              XAKAsensorReader. 
 #              
 # Author:      Yuancheng Liu
 #
 # Created:     2019/06/24
-# Copyright:   YC
+# Copyright:   NUS – Singtel Cyber Security Research & Development Laboratory
 # License:     YC
 #-----------------------------------------------------------------------------
 import wx
@@ -61,7 +61,7 @@ DETAIL_LABEL_LIST = [
 ]
 # Basic information label.
 CHART_LABEL_LIST = [
-    'Sensor ID:',  # int
+    'Sensor ID:',   # int
     'Connection:',  # str
     'Sequence_N:',  # float
     'People_NUM:',  # float
@@ -77,7 +77,6 @@ class PanelPlaceHolder(wx.Panel):
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         wx.StaticText(self, -1, "Place Holder: Add more sensor here", (20, 20))
 
-
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelBaseInfo(wx.Panel):
@@ -87,8 +86,14 @@ class PanelBaseInfo(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, size=(100, 300))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
-        self.valueDispList = []
+        self.valueDispList = [] # Follow the sequence in <CHART_LABEL_LIST>
         self.infoWindow = None  # window to show the detail information.
+        self.SetSizer(self.buildUISizer())
+        self.Show(True)
+
+#--PanelBaseInfo---------------------------------------------------------------
+    def buildUISizer(self):
+        """ Init the panel UI and return the sizer."""
         flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.AddSpacer(20)
@@ -105,43 +110,41 @@ class PanelBaseInfo(wx.Panel):
         self.detailBt = wx.Button(self, label='Detail >>'.rjust(10), size=(80, 23))
         self.detailBt.Bind(wx.EVT_BUTTON, self.showDetail)
         sizer.Add(self.detailBt, flag=flagsR, border=2)
-        self.SetSizer(sizer)
-        self.Show(True)
+        return sizer
 
-    #-----------------------------------------------------------------------------
-    def displayTargetClose(self, event):
-        """ Close display target info window and clear the tracked target."""
+#--PanelBaseInfo---------------------------------------------------------------
+    def infoWinClose(self, event):
+        """ Close the pop-up detail information window"""
         if self.infoWindow:
             self.infoWindow.Destroy()
-            self.infoWindow = None
             gv.iDetailPanel = None
-
-    #-----------------------------------------------------------------------------
+            self.infoWindow = None
+            
+#--PanelBaseInfo---------------------------------------------------------------
     def pauseUpdate(self, event):
         """ Start/Pause the update of the chart display."""
         buttonLb = event.GetEventObject().GetLabel()
         if 'Pause' in buttonLb:
-            self.pauseBt.SetLabel('Start >'.rjust(10))
+            self.pauseBt.SetLabel('Start >|'.rjust(10))
             if gv.iChartPanel: gv.iChartPanel.updateDisplay(updateFlag=False)
         elif 'Start' in buttonLb:
             self.pauseBt.SetLabel('Pause ||'.rjust(10))
             if gv.iChartPanel: gv.iChartPanel.updateDisplay(updateFlag=True)
 
-    #-----------------------------------------------------------------------------
+#--PanelBaseInfo---------------------------------------------------------------
     def showDetail(self, event):
-        """ pop up the detail window to show all the sensor parameters value."""
+        """ Pop up the detail window to show all the sensor parameters value."""
         if self.infoWindow is None and gv.iDetailPanel is None:
-            #posF =[ n+600 for n in gv.iMainFrame.GetClientAreaOrigin()]
             posF = gv.iMainFrame.GetPosition()
             self.infoWindow = wx.MiniFrame(gv.iMainFrame, -1,
-                'Detail Sensor Info', pos=(posF[0]+486, posF[1]),
+                'Detail Sensor Informaion', pos=(posF[0]+486, posF[1]),
                 size=(350, 700),
                 style=wx.DEFAULT_FRAME_STYLE)
             gv.iDetailPanel = PanelDetailInfo(self.infoWindow)
-            self.infoWindow.Bind(wx.EVT_CLOSE, self.displayTargetClose)
+            self.infoWindow.Bind(wx.EVT_CLOSE, self.infoWinClose)
             self.infoWindow.Show()
 
-   #-----------------------------------------------------------------------------
+#--PanelBaseInfo---------------------------------------------------------------
     def updateData(self, dataList):
         """ Update the data display on the panel. Input parameter sequence and 
             type follow <LABEL_LIST2>. 
