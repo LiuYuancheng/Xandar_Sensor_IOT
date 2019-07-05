@@ -10,8 +10,8 @@
 # Author:      Yuancheng Liu
 #
 # Created:     2019/04/29
-# Copyright:   YC
-# License:     YC
+# Copyright:   NUS – Singtel Cyber Security Research & Development Laboratory
+# License:     YC @ NUS
 #-----------------------------------------------------------------------------
 
 import os
@@ -22,7 +22,8 @@ import json
 import socket
 import hashlib
 import platform
-import chilkat # need to pip install this lib.
+import chilkat # need to download this lib.
+
 import IOT_Att as SWATT
 import firmwMsgMgr
 import firmwTLSclient as SSLC
@@ -30,8 +31,8 @@ import firmwGlobal as gv
 from functools import partial
 from datetime import datetime
 from OpenSSL import crypto
+from Constants import BUFFER_SIZE, SWATT_ITER
 
-pyVersionStr = str(platform.python_version())
 SENSOR_ID   = 203   # default sernsor ID for test.
 SIGNER_ID   = 154946511204681   # default signer user ID.
 
@@ -171,7 +172,7 @@ class FirmwareSignTool(wx.Frame):
             # Connect to server.
             connectRequest = self.msgMgr.dumpMsg(action='CR')
             self.tcpClient.send(connectRequest)
-            response = self.tcpClient.recv(gv.BUFFER_SIZE)                
+            response = self.tcpClient.recv(BUFFER_SIZE)                
             dataDict = self.msgMgr.loadMsg(response)
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'CR':
                 if dataDict['state']:
@@ -190,7 +191,7 @@ class FirmwareSignTool(wx.Frame):
     def fetchKeyFromServer(self):
         """ Send the private key file fetch request. """
         self.tcpClient.send(self.msgMgr.dumpMsg(action='CF'))
-        response = self.tcpClient.recv(gv.BUFFER_SIZE*4)
+        response = self.tcpClient.recv(BUFFER_SIZE*4)
         data = self.msgMgr.loadMsg(response)
         # here we assument the file not more than 4K
         if self.saveCert:
@@ -214,7 +215,7 @@ class FirmwareSignTool(wx.Frame):
 #-----------------------------------------------------------------------------
     def getSWATThash(self, fname):
         """ Get the file SWATT hash """
-        response = self.swattHd.getSWATT(self.swattChaStr, gv.SWATT_ITER, fname)
+        response = self.swattHd.getSWATT(self.swattChaStr, SWATT_ITER, fname)
         return response
 
 #-----------------------------------------------------------------------------
@@ -270,7 +271,7 @@ class FirmwareSignTool(wx.Frame):
         datab, self.ownRandom = self.msgMgr.dumpMsg(
             action='LI1', dataArgs=user)
         self.tcpClient.send(datab)
-        response = self.tcpClient.recv(gv.BUFFER_SIZE)
+        response = self.tcpClient.recv(BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB':
             if dataDict['lAct'] == 'LI1' and not dataDict['state']:
@@ -282,7 +283,7 @@ class FirmwareSignTool(wx.Frame):
                     datab = self.msgMgr.dumpMsg(
                         action='LI2', dataArgs=(dataDict['random2'], pwd))
                     self.tcpClient.send(datab)
-                    response = self.tcpClient.recv(gv.BUFFER_SIZE)
+                    response = self.tcpClient.recv(BUFFER_SIZE)
                     dataDict = self.msgMgr.loadMsg(response)
                     if dataDict['act'] == 'LR2':
                         self.swattChaStr = dataDict['challenge']
@@ -328,7 +329,7 @@ class FirmwareSignTool(wx.Frame):
         signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
         datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, SIGNER_ID,swatt_str, date_str, sensor_type, version, signature))
         self.tcpClient.send(datab)
-        response = self.tcpClient.recv(gv.BUFFER_SIZE)
+        response = self.tcpClient.recv(BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB' and dataDict['lAct'] and dataDict['state']:
             print("FirmwSign: The firmware is signed successfully.")
@@ -352,7 +353,7 @@ class FirmwareSignTool(wx.Frame):
         signature = crypto.sign(self.priv_key, combinStr.encode('utf-8'), 'sha256')
         datab = self.msgMgr.dumpMsg(action='SR', dataArgs=(SENSOR_ID, SIGNER_ID,swatt_str, date_str, sensor_type, version, signature))
         self.tcpClient.send(datab)
-        response = self.tcpClient.recv(gv.BUFFER_SIZE)
+        response = self.tcpClient.recv(BUFFER_SIZE)
         dataDict = self.msgMgr.loadMsg(response)
         if dataDict['act'] == 'HB' and dataDict['lAct']:
             print("FirmwSign: The firmware is signed successfully.")

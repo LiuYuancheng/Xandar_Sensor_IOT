@@ -24,10 +24,11 @@ import random
 
 from struct import unpack
 from functools import partial
+from Constants import BUFFER_SIZE
 
 import firmwMsgMgr
 import firmwTLSclient as SSLC
-import firmwGlobal as gv
+import XAKAsensorGlobal as gv
 import XAKAsensorPanel as xsp
 
 PERIODIC = 500 # how many ms the periodic call back
@@ -106,7 +107,7 @@ class SensorReaderFrame(wx.Frame):
             self.sslClient.connect((ip, port))
             # Send SSL connection request cmd and get response.
             self.sslClient.send(self.msgMgr.dumpMsg(action='CR'))
-            dataDict = self.msgMgr.loadMsg(self.sslClient.recv(gv.BUFFER_SIZE))
+            dataDict = self.msgMgr.loadMsg(self.sslClient.recv(BUFFER_SIZE))
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'CR' and dataDict['state']:
                 print("SConnetion: Connect to the server succesfully.")
             else:
@@ -116,7 +117,7 @@ class SensorReaderFrame(wx.Frame):
             # Register the sensor.(Temporary hard code the sigature for test.)
             data = (self.senId, SENSOR_TYPE, self.version, self.signature)
             self.sslClient.send(self.msgMgr.dumpMsg(action='RG', dataArgs=data))
-            dataDict = self.msgMgr.loadMsg(self.sslClient.recv(gv.BUFFER_SIZE))
+            dataDict = self.msgMgr.loadMsg(self.sslClient.recv(BUFFER_SIZE))
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'RG' and dataDict['state']:
                 self.statusbar.SetStatusText("Sensor registration success.")
                 self.activeFlag = True

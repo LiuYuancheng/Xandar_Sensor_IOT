@@ -14,8 +14,9 @@ import os
 import hashlib
 import sqlite3
 from sqlite3 import Error
+from Constants import RAN_LEN
 import firmwGlobal as gv
-DE_USER = ("admin", os.urandom(gv.RAN_LEN).hex(), '123')   # defualt user.
+DE_USER = ("admin", os.urandom(RAN_LEN).hex(), '123')   # defualt user.
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -59,7 +60,7 @@ class firmwDBMgr(object):
             # Add default user if needed.
             self.addUser(DE_USER)
         # Test whether the user is in database.
-        self.addUser(('123', os.urandom(gv.RAN_LEN).hex(), '123'))
+        self.addUser(('123', os.urandom(RAN_LEN).hex(), '123'))
         print (self.authorizeUser('123','123'))
 
 #-----------------------------------------------------------------------------

@@ -20,8 +20,11 @@ import wx # use wx to build the UI.
 import time
 import serial
 import threading
-from struct import *
+
+from struct import unpack
 from functools import partial
+from Constants import BUFFER_SIZE
+
 import firmwMsgMgr
 import firmwTLSclient as SSLC
 import firmwGlobal as gv

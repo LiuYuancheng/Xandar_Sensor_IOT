@@ -15,6 +15,7 @@ import os
 import sys
 import socket
 from OpenSSL import SSL, crypto
+from Constants import BUFFER_SIZE
 import firmwGlobal as gv
 
 # Use Local IP and port 5005 as defualt value for test.
@@ -87,7 +88,7 @@ def testCase():
     print("Send the message to server")
     for _ in range(6):
         sslClient.send(b"send test string")
-        print(sslClient.recv(gv.BUFFER_SIZE).decode('utf-8'))
+        print(sslClient.recv(BUFFER_SIZE).decode('utf-8'))
     print("Finished and stop")
     sslClient.shutdown()
     sslClient.close()

@@ -9,12 +9,12 @@
 #
 # Created:     2019/06/24
 # Copyright:   NUS – Singtel Cyber Security Research & Development Laboratory
-# License:     YC
+# License:     YC @ NUS
 #-----------------------------------------------------------------------------
 import wx
 import wx.grid
 import random
-import firmwGlobal as gv 
+import XAKAsensorGlobal as gv 
 
 PERIODIC = 500  # how many ms the periodic call back
 

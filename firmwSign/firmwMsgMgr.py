@@ -15,7 +15,7 @@
 import os
 import json
 import time
-import firmwGlobal as gv
+from Constants import CMD_TYPE, FILE_TYPE, RAN_LEN
 
 # Action type:
 # CR    - Connection request
@@ -76,7 +76,7 @@ class msgMgr(object):
     def loadMsg(self, msg):
         """ Convert the dumpped message back to orignal data. """
         tag = msg[0:1] # Take out the tag data.
-        data = json.loads(msg[1:]) if tag == gv.CMD_TYPE else msg[1:]
+        data = json.loads(msg[1:]) if tag == CMD_TYPE else msg[1:]
         return data
 
 #-----------------------------------------------------------------------------
@@ -86,7 +86,7 @@ class msgMgr(object):
             "act"   : 'CR',
             "time"  : time.time()
         }
-        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createHBmsg(self, lastAct, state):
@@ -97,19 +97,19 @@ class msgMgr(object):
             "lAct"  : lastAct,  # last received action 
             "state" : state     # last action exe state/data
         }
-        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createLI1msg(self, userName):
         """ Create login step1 msg: send userName + randomNum1 """
         if userName is None or not isinstance(userName, str): return None 
-        randomB = os.urandom(gv.RAN_LEN)
+        randomB = os.urandom(RAN_LEN)
         msgDict = {
             "act"       : 'LI1',
             "user"      : userName.strip(),
             "random1"   : randomB.hex()
         }
-        data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
         return (data, randomB)
 
 #-----------------------------------------------------------------------------
@@ -121,21 +121,21 @@ class msgMgr(object):
             "random2"   : random2,
             "password"  : password 
         }
-        data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
         return data
 
 #-----------------------------------------------------------------------------
     def _createLR1msg(self, args):
         """ Create login step1 response: randomNum1 + randomNum2. """
         (randomB, state) = args
-        randomB2 = os.urandom(gv.RAN_LEN)
+        randomB2 = os.urandom(RAN_LEN)
         msgDict = {
             "act"       : 'LR1',
             "state"     : state,
             "random1"   : randomB,
             "random2"   : randomB2.hex() 
         }
-        data = gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        data = CMD_TYPE + json.dumps(msgDict).encode('utf-8')
         return (data, randomB2)
 
 #-----------------------------------------------------------------------------
@@ -146,7 +146,7 @@ class msgMgr(object):
             "act"       : 'LR2',
             "challenge" : challengeStr.strip(),
         }
-        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createLOmsg(self):
@@ -155,7 +155,7 @@ class msgMgr(object):
             "act"   : 'LO',
             "time"  : time.time()
         }
-        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createCFmsg(self):
@@ -164,7 +164,7 @@ class msgMgr(object):
             "act"   : 'CF',
             "time"  : time.time()
         }
-        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createSRmsg(self, args):
@@ -183,7 +183,7 @@ class msgMgr(object):
             "version"   : versionS,     # Sensor version.
             "signStr"   : signS.hex()   # Signature string.
         }
-        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createRGmsg(self, args):
@@ -201,12 +201,12 @@ class msgMgr(object):
             "version"   : fwVersion,    # Sensor version.
             "signStr"   : signS         # Signature string.
         }
-        return gv.CMD_TYPE + json.dumps(msgDict).encode('utf-8')
+        return CMD_TYPE + json.dumps(msgDict).encode('utf-8')
 
 #-----------------------------------------------------------------------------
     def _createFLmsg(self, bytesData):
         """ Create the file message."""
-        return gv.FILE_TYPE + bytesData
+        return FILE_TYPE + bytesData
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------

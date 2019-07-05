@@ -25,6 +25,7 @@ import firmwTLSserver as SSLS
 import firmwTAServer as TAS
 import firmwGlobal as gv
 from OpenSSL import crypto
+from Constants import BUFFER_SIZE
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -239,7 +240,7 @@ class FirmwServ(object):
                 conn, addr = self.tcpServer.accept()
                 print('Connection: connection address:<%s>' %str(addr))
                 while not terminate:
-                    data = conn.recv(gv.BUFFER_SIZE)
+                    data = conn.recv(BUFFER_SIZE)
                     if not data: break # get the ending message. 
                     print("Connection: received data:<%s>" %str(data))
                     dataDict = self.msgMgr.loadMsg(data)
@@ -287,7 +288,7 @@ class rgCommThread(threading.Thread):
                 conn, addr = self.tcpServer.accept()
                 print('RGConnection: connection address:<%s>' %str(addr))
                 while not terminate:
-                    data = conn.recv(gv.BUFFER_SIZE)
+                    data = conn.recv(BUFFER_SIZE)
                     if not data: break # get the ending message. 
                     print("RGConnection: received data:<%s>" %str(data))
                     dataDict = self.msgMgr.loadMsg(data)
