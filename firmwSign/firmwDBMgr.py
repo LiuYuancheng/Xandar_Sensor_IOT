@@ -6,8 +6,8 @@
 # Author:      Yuancheng Liu
 #
 # Created:     2019/05/08
-# Copyright:   YC
-# License:     YC
+# Copyright:   NUS – Singtel Cyber Security Research & Development Laboratory
+# License:     YC @ NUS
 #-----------------------------------------------------------------------------
 
 import os
@@ -21,11 +21,10 @@ DE_USER = ("admin", os.urandom(RAN_LEN).hex(), '123')   # defualt user.
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class firmwDBMgr(object):
-    """ firmware Sign system dataBase manager. 
-    """
+    """ Firmware sign system dataBase manager. """
     def __init__(self):
-        """ Check whether the data base has been created and connect to DB+table
-            if needed.
+        """ Check whether the data base has been created and connect to database.
+            (create the DB+table if needed.)
         """
         self.sql_firwareInfo_table = None
         self.sql_user_table = None
@@ -57,15 +56,15 @@ class firmwDBMgr(object):
         if self.sql_firwareInfo_table and self.conn:
             self.createTable(self.sql_firwareInfo_table)
             self.createTable(self.sql_user_table)
-            # Add default user if needed.
+            # Add default user if create the new database.
             self.addUser(DE_USER)
         # Test whether the user is in database.
         self.addUser(('123', os.urandom(RAN_LEN).hex(), '123'))
-        print (self.authorizeUser('123','123'))
+        print(self.authorizeUser('123', '123'))
 
-#-----------------------------------------------------------------------------
+#--firmwDBMgr------------------------------------------------------------------
     def addUser(self, args):
-        """ Add a not exist user and password in the DB. """
+        """ Add a new user and its password in the DB. """
         user, salt, pwd = args
         pwdhash = hashlib.sha256(bytes.fromhex(salt) + str(pwd).encode('utf-8')).hexdigest()
         # Check wether user in the DB already:
@@ -85,7 +84,7 @@ class firmwDBMgr(object):
             cur.execute(sql, (str(user), salt, str(pwdhash)))
         return True
 
-#-----------------------------------------------------------------------------
+#--firmwDBMgr------------------------------------------------------------------
     def authorizeUser(self, user, pwd):
         """ Authorize user and password. """
         # Check wether user in the DB already:
@@ -102,7 +101,7 @@ class firmwDBMgr(object):
                 return False
         return False
 
-#-----------------------------------------------------------------------------
+#--firmwDBMgr------------------------------------------------------------------
     def authorizeSensor(self, args):
         """ Authorize whether a sensor has been registered."""
         if len(args) != 5:
@@ -127,7 +126,7 @@ class firmwDBMgr(object):
                         return False
         return False
 
-#-----------------------------------------------------------------------------
+#--firmwDBMgr------------------------------------------------------------------
     def checkUser(self, userName):
         """ Check whehter the user is in the data base. """
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
@@ -140,7 +139,7 @@ class firmwDBMgr(object):
                 return True
         return False
 
-#-----------------------------------------------------------------------------
+#--firmwDBMgr------------------------------------------------------------------
     def createTable(self, create_table_sql):
         """ Create a table base on the input sql requst."""
         try:
@@ -150,16 +149,16 @@ class firmwDBMgr(object):
         except Error as e:
             print(e)
 
-#-----------------------------------------------------------------------------
+#--firmwDBMgr------------------------------------------------------------------
     def createConnection(self, db_file):
-        """ create a database connection to a SQLite database """
+        """ Create a database connection to a SQLite database """
         try:
             return sqlite3.connect(db_file)
         except Error as e:
             print(e)
             return None
 
-#-----------------------------------------------------------------------------
+#--firmwDBMgr------------------------------------------------------------------
     def createFmSignRcd(self, rcdArgs):
         """ Create a firmware sign record in the data base."""
         if len(rcdArgs) != 10: 
@@ -174,7 +173,7 @@ class firmwDBMgr(object):
             print("DBmgr: This is the cursir UD: %s" %str(cur.lastrowid))
             return cur.lastrowid
    
-#-----------------------------------------------------------------------------
+#--firmwDBMgr------------------------------------------------------------------
     def updateRecd(self,rcd):
         """ Udate the firware sign recode(currently not used)"""
         sql = ''' UPDATE firmwareInfo
