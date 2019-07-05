@@ -77,9 +77,10 @@ class SensorReaderFrame(wx.Frame):
         # Set the NoteBook page 1(sensor 1)
         ntbgPage1 = wx.Panel(nb)
         hboxPg1= wx.BoxSizer(wx.HORIZONTAL)
-        self.linechart = xsp.PanelChart(ntbgPage1, 100)
+        self.linechart = xsp.PanelChart(ntbgPage1, recNum=60)
         gv.iChartPanel = self.linechart
         hboxPg1.Add(self.linechart, 1)
+        hboxPg1.AddSpacer(5)
         self.infoPanel = xsp.PanelBaseInfo(ntbgPage1)
         hboxPg1.Add(self.infoPanel,1)
         ntbgPage1.SetSizer(hboxPg1)
@@ -149,6 +150,9 @@ class SensorReaderFrame(wx.Frame):
                         '<f', data)  # get the ID and parameter number
                     self.dataList.append(val[0])
                 break # only process the data once.
+        if len(self.dataList) == 0: 
+            print("Please check the sensor connection.")
+            return
         # Set sensor ID and version for resigter
         if not (self.senId and self.version):
             self.senId, self.version = self.dataList[0], self.dataList[8]
@@ -216,7 +220,7 @@ class SensorReaderFrame(wx.Frame):
         self.multiInfoPg.updateSensorGrid(
             0, (self.dataList[0], self.dataList[4], self.dataList[27]))
         # Update the top view map panel.
-        gv.iMapPanel.updateNum(self.dataList[27])
+        gv.iMapPanel.updatePPLNum(self.dataList[27])
         gv.iMapPanel.updateDisplay()
 
 #--SensorReaderFrame-----------------------------------------------------------

@@ -13,7 +13,6 @@
 #-----------------------------------------------------------------------------
 import wx
 import wx.grid
-import time
 import random
 import firmwGlobal as gv 
 
@@ -104,10 +103,10 @@ class PanelBaseInfo(wx.Panel):
             self.valueDispList.append(datalabel)
             sizer.Add(datalabel, flag=flagsR, border=2)
         # Control button rows.
-        self.pauseBt = wx.Button(self, label='Pause ||'.rjust(10), size=(80, 23))
+        self.pauseBt = wx.Button(self, label='Pause ||', style=wx.BU_LEFT, size=(80, 23))
         self.pauseBt.Bind(wx.EVT_BUTTON, self.pauseUpdate)
         sizer.Add(self.pauseBt, flag=flagsR, border=2)
-        self.detailBt = wx.Button(self, label='Detail >>'.rjust(10), size=(80, 23))
+        self.detailBt = wx.Button(self, label='Detail >>', style=wx.BU_LEFT, size=(80, 23))
         self.detailBt.Bind(wx.EVT_BUTTON, self.showDetail)
         sizer.Add(self.detailBt, flag=flagsR, border=2)
         return sizer
@@ -164,71 +163,67 @@ class PanelChart(wx.Panel):
         of the people counting sensor's data.
         example: http://manwhocodes.blogspot.com/2013/04/graphics-device-interface-in-wxpython.html
     """
-    def __init__(self, parent, recNum):
+    def __init__(self, parent, recNum=60):
         """ Init the panel."""
         wx.Panel.__init__(self, parent, size=(350, 300))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
-        self.recNum = 60
+        self.recNum = recNum
         self.updateFlag = True  # flag whether we update the diaplay area
         # [(current num, average num, final num)]*60
         self.data = [(0, 0, 0)] * self.recNum
         self.times = ('-30s', '-25s', '-20s', '-15s', '-10s', '-5s', '0s')
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
-    #-----------------------------------------------------------------------------
+#--PanelChart--------------------------------------------------------------------
     def appendData(self, numsList):
         """ Append the data into the data hist list.
             numsList Fmt: [(current num, average num, final num)]
         """
-        for i, value in enumerate(numsList):
-            if value> 20: numsList[i] = 20
-        self.data.append(numsList)
+        self.data.append([min(n, 20)for n in numsList])
         self.data.pop(0) # remove the first oldest recode in the list.
     
-    #-----------------------------------------------------------------------------
+#--PanelChart--------------------------------------------------------------------
     def drawBG(self, dc):
         """ Draw the line chart background."""
         dc.SetPen(wx.Pen('WHITE'))
         dc.DrawRectangle(1, 1, 300, 200)
-        # Draw Axis and Grids:
-        dc.SetPen(wx.Pen('#D5D5D5')) #dc.SetPen(wx.Pen('#0AB1FF'))
+        # DrawTitle:
         font = dc.GetFont()
         font.SetPointSize(8)
         dc.SetFont(font)
+        dc.DrawText('XAKA sensor data', 2, 235)
+        # Draw Axis and Grids:(Y-people count X-time)
+        dc.SetPen(wx.Pen('#D5D5D5')) #dc.SetPen(wx.Pen('#0AB1FF'))
         dc.DrawLine(1, 1, 300, 1)
-        dc.DrawLine(1, 1, 1, 201)
-        for i in range(2, 22, 2): 
+        dc.DrawLine(1, 1, 1, 200)
+        for i in range(2, 22, 2):
             dc.DrawLine(2, i*10, 300, i*10) # Y-Grid
             dc.DrawLine(2, i*10, -5, i*10)  # Y-Axis
-            dc.DrawText(str(i).zfill(2), -25, i*10+5) # format to ## int  
+            dc.DrawText(str(i).zfill(2), -25, i*10+5)  # format to ## int, such as 02
         for i in range(len(self.times)): 
             dc.DrawLine(i*50, 2, i*50, 200) # X-Grid
             dc.DrawLine(i*50, 2, i*50, -5)  # X-Axis
             dc.DrawText(self.times[i], i*50-10, -5)
-        # DrawTitle:
-        font = dc.GetFont()
-        #font.SetWeight(wx.FONTWEIGHT_BOLD)
-        dc.SetFont(font)
-        dc.DrawText('XAKA sensor data', 2, 235)
-
-    #-----------------------------------------------------------------------------
+        
+#--PanelChart--------------------------------------------------------------------
     def drawFG(self, dc):
         """ Draw the front ground data chart line."""
-        color = ('#0AB1FF', '#CE8349', '#A5CDAA')
-        label = ("Crt_N", "Avg_N", "Fnl_N")
+        # draw item (Label, color)
+        item = (('Crt_N', '#0AB1FF'), ('Avg_N', '#CE8349'), ('Fnl_N', '#A5CDAA'))
         for idx in range(3):
+            (label, color) = item[idx]
             # Draw the line sample.
-            dc.SetPen(wx.Pen(color[idx], width=2, style=wx.PENSTYLE_SOLID))
+            dc.SetPen(wx.Pen(color, width=2, style=wx.PENSTYLE_SOLID))
+            dc.DrawText(label, idx*60+115, 220)
             dc.DrawLine(100+idx*60, 212, 100+idx*60+8, 212)
-            dc.DrawText(label[idx], idx*60+115, 220)
             # Create the point list and draw.
-            dc.DrawSpline([(i*5, self.data[i][idx]*10)for i in range(len(self.data))])
+            dc.DrawSpline([(i*5, self.data[i][idx]*10) for i in range(self.recNum)])
 
-    #-----------------------------------------------------------------------------
+#--PanelChart--------------------------------------------------------------------
     def updateDisplay(self, updateFlag=None):
         """ Set/Update the display: if called as updateDisplay() the function will 
-            update the panel, if called as updateDisplay(updateFlag=?) the function will 
-            set the self update flag.
+            update the panel, if called as updateDisplay(updateFlag=?) the function 
+            will set the self update flag.
         """
         if updateFlag is None and self.updateFlag: 
             self.Refresh(True)
@@ -236,11 +231,11 @@ class PanelChart(wx.Panel):
         else:
             self.updateFlag = updateFlag
 
-    #-----------------------------------------------------------------------------
+#--PanelChart--------------------------------------------------------------------
     def OnPaint(self, event):
         """ Main panel drawing function."""
         dc = wx.PaintDC(self)
-        # set the axis Orientation area and fmt to up+right direction.
+        # set the axis orientation area and fmt to up + right direction.
         dc.SetDeviceOrigin(40, 240)
         dc.SetAxisOrientation(True, True)
         self.drawBG(dc)
@@ -249,25 +244,26 @@ class PanelChart(wx.Panel):
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 class PanelDetailInfo(wx.Panel):
-    """ Panel to show the all 35 detail parameters' value read from the sensor."""
+    """ Panel to show all 35 detail parameters' value read from the sensor."""
     def __init__(self, parent):
         """ Init the panel."""
-        wx.Panel.__init__(self, parent, size=(350, 300))
+        wx.Panel.__init__(self, parent, size=(350, 700))
+        self.SetBackgroundColour(wx.Colour(200, 200, 200))
         self.parent = parent
         self.valueDispList = []     # Label list will display on UI.
-        self.SetBackgroundColour(wx.Colour(200, 200, 200))
-        sizer = self.buildUISizer()
-        self.SetSizer(sizer)
+        self.SetSizer(self.buildUISizer())
 
-    #-----------------------------------------------------------------------------
+#--PanelDetailInfo----------------------------------------------------------------
     def buildUISizer(self):
-        """ build the UI sizer for the background panel."""
-        sizer = wx.GridSizer(len(DETAIL_LABEL_LIST)+2, 2, 4, 4)
+        """ Build the panel main UI and return the wx sizer"""
+        sizer = wx.GridSizer(len(DETAIL_LABEL_LIST)+4, 2, 4, 4)
         # Add the title line.
-        sizer.Add(wx.Button(self, label='ParameterName ',
-                            size=(170, 18), style=wx.BU_LEFT, name='ParameterName'))
-        sizer.Add(wx.Button(self, label='FeedbackValue ', size=(
-            170, 18), style=wx.BU_LEFT, name='Value'))
+        sizer.Add(wx.StaticText(self, -1, 'ParameterName '))
+        sizer.Add(wx.StaticText(self, -1, 'FeedbackValue '))
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(170, -1),
+                                style=wx.LI_HORIZONTAL), flag=wx.RIGHT, border=2)
+        sizer.Add(wx.StaticLine(self, wx.ID_ANY, size=(170, -1),
+                                style=wx.LI_HORIZONTAL), flag=wx.RIGHT, border=2)
         # Add the display area.
         for item in DETAIL_LABEL_LIST:
             sizer.Add(wx.StaticText(self, -1, item))
@@ -276,7 +272,7 @@ class PanelDetailInfo(wx.Panel):
             sizer.Add(datalabel)
         return sizer
 
-    #-----------------------------------------------------------------------------
+#--PanelDetailInfo----------------------------------------------------------------
     def updateDisplay(self, dataList):
         """ Update the panel display. The input data list follow the sequence in 
             <DETAIL_LABEL_LIST>
@@ -284,8 +280,8 @@ class PanelDetailInfo(wx.Panel):
         if len(dataList) != len(DETAIL_LABEL_LIST):
             print("PanelDetailInfo: The input data list element missing %d", len(dataList))
             return
-        for i in range(len(dataList)): 
-            self.valueDispList[i].SetLabel(str(dataList[i]))
+        for i, value in enumerate(dataList): 
+            self.valueDispList[i].SetLabel(str(value))
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -301,91 +297,77 @@ class PanelMap(wx.Panel):
         self.bitmap = wx.Bitmap(gv.BGPNG_PATH)
         self.bitmapSZ = self.bitmap.GetSize()
         self.toggle = True      # Display toggle flag.     
-        self.pplNum = 0         # Number of peopel.
-        self.highLightIdx = 0   # High light area. 
+        self.pplNum = 0         # Number of peopel.  
+        # Set high light area position:  
+        # |(0, 0) idx=0| (1, 0) idx=1|
+        # |(0, 1) idx=2| (1, 1) idx=3|
+        self.highLightPos = (0, 0) 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
         
-    #-----------------------------------------------------------------------------
-    def OnPaint(self, event):
-        """ Draw the whole panel. """
-        dc = wx.PaintDC(self)
-        dc.DrawBitmap(self.bitmap, 1, 1)
-        # Dc Draw the detection area.
-        penColor = 'BLUE' if self.toggle else 'RED'
-        dc.SetPen(wx.Pen(penColor, width=2, style=wx.PENSTYLE_LONG_DASH))
-        w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
-        # High Light the user selected area.
-        self.DrawHighLight(dc, w, h)
-        # draw the sensor as a flag rectangle:
-        dc.SetPen(wx.Pen('blue', width=1, style=wx.PENSTYLE_SOLID))
-        dc.SetBrush(wx.Brush(wx.Colour(penColor)))
-        dc.DrawRectangle(112, 60, 11, 11)
-        # Draw the transparent rectangle to represent how many people in the area.
-        gdc = wx.GCDC(dc)
-        r = g = b = 120
-        r = r+self.pplNum*7 if r+self.pplNum*7 < 255 else 254
-        brushclr = wx.Colour(r, g, b, 128)   # half transparent
-        gdc.SetBrush(wx.Brush(brushclr))
-        gdc.DrawRectangle(1, 1, w, h)
-        self.toggle = not self.toggle # set the toggle display flag.
-
-    #-----------------------------------------------------------------------------
-    def DrawHighLight(self, dc, w, h):
-        """ High light the area user clicked"""
+#--PanelMap--------------------------------------------------------------------
+    def drawHighLight(self, dc, w, h):
+        """ High light the area which the user has clicked."""
         # set the position: l-left t-top r-right b-bottum x_offset y_offset.
-        l, t, r, b, x_offset, y_offset = 1, 1, w, h, 0, 0 
-        
-        if self.highLightIdx == 1:
-            x_offset = w
-        elif self.highLightIdx == 2:
-            y_offset = h
-        elif self.highLightIdx == 3:
-            x_offset = w
-            y_offset = h
+        l, t, r, b = 1, 1, w, h
+        x_offset = w if self.highLightPos[0] == 1 else 0
+        y_offset = h if self.highLightPos[1] == 1 else 0 
         # Hight list area by draw a rectangle.
         dc.DrawLine(l+x_offset, t+y_offset, r+x_offset, t+y_offset)
         dc.DrawLine(l+x_offset, t+y_offset, l+x_offset, b+y_offset)
         dc.DrawLine(r+x_offset, t+y_offset, r+x_offset, b+y_offset)
         dc.DrawLine(l+x_offset, b+y_offset, r+x_offset, b+y_offset)
 
-    #-----------------------------------------------------------------------------
+#--PanelMap--------------------------------------------------------------------
     def OnClick(self, event):
         """ High light the user clicked area."""
         x, y = event.GetPosition()
         w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
-        if x < w and y < h:
-            self.highLightIdx = 0
-        elif x >= w and y < h:
-            self.highLightIdx = 1
-        elif x < w and y >= h:
-            self.highLightIdx = 2
-        else:
-            self.highLightIdx = 3
+        self.highLightPos = (x//w, y//h)
         self.updateDisplay()
         # mark the line in the sensor information grid.
-        self.Parent.markSensorRow(self.highLightIdx)
+        idx = self.highLightPos[0]*1 + self.highLightPos[1]*2
+        self.Parent.markSensorRow(idx)
 
-    #-----------------------------------------------------------------------------
-    def updateNum(self, number):
-        """ Udpate the self people number."""
-        self.pplNum = int(number)
+#--PanelMap--------------------------------------------------------------------
+    def OnPaint(self, event):
+        """ Draw the whole panel. """
+        dc = wx.PaintDC(self)
+        dc.DrawBitmap(self.bitmap, 1, 1)
+        # Dc Draw the detection area.
+        toggleColor = 'BLUE' if self.toggle else 'RED'
+        dc.SetPen(wx.Pen(toggleColor, width=2, style=wx.PENSTYLE_LONG_DASH))
+        w, h = self.bitmapSZ[0]//2, self.bitmapSZ[1]//2
+        # High Light the user selected area.
+        self.drawHighLight(dc, w, h)
+        # Draw the sensor position(a flash rectangle)
+        dc.SetPen(wx.Pen('BLUE', width=1, style=wx.PENSTYLE_SOLID))
+        dc.SetBrush(wx.Brush(wx.Colour(toggleColor)))
+        dc.DrawRectangle(112, 60, 12, 12)
+        # Draw the transparent rectangle to represent how many people in the area.
+        gdc = wx.GCDC(dc)
+        r, g, b, alph = min(120+self.pplNum*7, 255), 120, 120, 128 # half transparent alph
+        gdc.SetBrush(wx.Brush(wx.Colour(r, g, b, alph)))  
+        gdc.DrawRectangle(1, 1, w, h)
+        self.toggle = not self.toggle # set the toggle display flag.
 
-    #-----------------------------------------------------------------------------
+#--PanelMap--------------------------------------------------------------------
     def updateDisplay(self, updateFlag=None):
-        """ Set/Update the display: if called as updateDisplay() the function will 
-            update the panel, if called as updateDisplay(updateFlag=?) the function will 
-            set the self update flag.
-        """
+        """ Refresh the panel."""
         self.Refresh(True)
         self.Update()
 
-#-----------------------------------------------------------------------------
-#-----------------------------------------------------------------------------
+#--PanelMap--------------------------------------------------------------------
+    def updatePPLNum(self, number):
+        """ Udpate the self people number."""
+        self.pplNum = int(number)
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class PanelMultInfo(wx.Panel):
-    """ Mutli-information panel used to show all sensor's detection situation on the 
-        office topview map, sensor connection status and show a Grid to show all the 
-        sensor's detection data.
+    """ Mutli-information display panel used to show all sensors' detection 
+        situation on the office top-view map, sensor connection status and a 
+        wx.Grid to show all the sensors' basic detection data.
     """
     def __init__(self, parent):
         """ Init the panel."""
@@ -393,39 +375,37 @@ class PanelMultInfo(wx.Panel):
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         self.mapPanel = None
         self.sensorCount = 1    # total sensor count.
-        self.totPllNum = 0      # total current number of people detected
-        self.totPllAvg = 0      # total avg number of people detected 
+        #self.totPllNum = 0      # total current number of people detected
+        #self.totPllAvg = 0      # total avg number of people detected 
         self.senIndList = []    # sensor indicator list.
-        mainUISizer = self.buidUISizer()
-        self.SetSizer(mainUISizer)
+        self.SetSizer(self.buidUISizer())
 
-    #-----------------------------------------------------------------------------
+#--PanelMultInfo---------------------------------------------------------------
     def buidUISizer(self):
         """ Build the UI with 2 columns.left: Map, right: sensor data Grid."""
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        flagsT = wx.RIGHT
-        flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
+        flagsT, flagsR = wx.RIGHT, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
         sizer.AddSpacer(5)
-        # Column idx = 1 Map panel.
+        # Column idx = 0 Map panel.
         gv.iMapPanel = self.mapPanel = PanelMap(self)
-        # Column idx =2 Data display part:
+        # Column idx = 1 Data display part:
         sizer.Add(self.mapPanel, flag=flagsR, border=2)
         vsizer = wx.BoxSizer(wx.VERTICAL)
         vsizer.Add(wx.StaticText(self, label='Sensor Connection Status:'),
                    flag=flagsT, border=2)
         vsizer.AddSpacer(10)
-        # Column dix =2, row idx = 1: All the sensor connection indicators: 
+        # Column dix = 1, row idx = 0: All the sensors' connection indicators: 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         for i in range(4):
-            sen1S = wx.StaticText(self, label=str('Sensor '+str(i)).center(10))
-            self.senIndList.append(sen1S)
-            sen1S.SetBackgroundColour(wx.Colour(120, 120, 120))
-            hbox.Add(sen1S, flag=flagsR, border=2)
+            senInd = wx.StaticText(self, label='[Sensor%d]' %i)
+            senInd.SetBackgroundColour(wx.Colour(120, 120, 120))
+            self.senIndList.append(senInd)
+            hbox.Add(senInd, flag=flagsR, border=2)
             hbox.AddSpacer(5)
-        self.updateSensorIndicator(0, 1)
+        self.updateSensorIndicator(0, 1) # update the indicator.
         vsizer.Add(hbox, flag=flagsR, border=2)
         vsizer.AddSpacer(10)
-        # Column dix =2, row idx = 2: Sensor information display Grid.
+        # Column dix = 1, row idx = 1: Sensor information display Grid.
         vsizer.Add(wx.StaticText(self, label='Sensors FeedBack Data:'),
             flag=flagsT, border=2)
         vsizer.AddSpacer(10)
@@ -446,43 +426,44 @@ class PanelMultInfo(wx.Panel):
         sizer.Add(vsizer, flag=flagsT, border=2)
         return sizer
 
-    #-----------------------------------------------------------------------------
+#--PanelMultInfo---------------------------------------------------------------
     def updateSensorIndicator(self, idx, state):
         """ Update the sensor indictor's status Green:online, Gray:Offline."""
-        color = wx.Colour("Green") if state else wx.Colour(120, 120, 120)
+        color = wx.Colour("GREEN") if state else wx.Colour(120, 120, 120)
         self.senIndList[idx].SetBackgroundColour(color)
 
-    #-----------------------------------------------------------------------------
+#--PanelMultInfo---------------------------------------------------------------
     def updateSensorGrid(self, idx, dataList):
         """ Update the sensor Grid's display based on the sensor index. """
         if len(dataList) != 3:
             print("PanelMultInfo: Sensor Grid fill in data element missing.")
             return
-        # Udpate the grid cells' data. 
+        # Udpate the grid cells' data.
+        totPllNum = totPllAvg = 0
         for i, item in enumerate(dataList):
             dataStr = "{0:.4f}".format(item) if isinstance(
                 item, float) else str(item)
             self.grid.SetCellValue(idx, i, dataStr)
-            if i == 1: self.totPllNum += item
-            if i == 2: self.totPllAvg += item
+            if i == 1: totPllNum += item
+            if i == 2: totPllAvg += item
         # update the total numbers. 
         self.grid.SetCellValue(4, 0, str(self.sensorCount))
-        self.grid.SetCellValue(4, 1, "{0:.4f}".format(self.totPllNum))
-        self.grid.SetCellValue(4, 2, "{0:.4f}".format(self.totPllAvg))
+        self.grid.SetCellValue(4, 1, "{0:.4f}".format(totPllNum))
+        self.grid.SetCellValue(4, 2, "{0:.4f}".format(totPllAvg))
         self.grid.ForceRefresh()  # refresh all the grid's cell at one time ?
-        self.totPllNum = self.totPllAvg = 0
-
-    #-----------------------------------------------------------------------------
+        
+#--PanelMultInfo---------------------------------------------------------------
     def markSensorRow(self, idx):
         """ Mark(highlight)the selected row."""
         self.grid.SelectRow(idx)
 
-    #-----------------------------------------------------------------------------
+#--PanelMultInfo---------------------------------------------------------------
     def highLightMap(self, event):
         """ High light the sensor covered area on the topview map."""
         row_index = event.GetRow()
         self.grid.SelectRow(row_index)
-        self.mapPanel.highLightIdx = row_index 
+        # covert 0->(0, 0) 1->(1, 0), 2->(0, 1), 3->(1, 1)
+        self.mapPanel.highLightPos = (row_index % 2, row_index//2) 
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -492,12 +473,10 @@ class PanelSetup(wx.Panel):
         """ Init the panel."""
         wx.Panel.__init__(self, parent, size=(350, 300))
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
-        flagsT = wx.RIGHT
-        flagsR = wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
-
+        flagsT, flagsR = wx.RIGHT, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL
         vsizer = wx.BoxSizer(wx.VERTICAL)
         vsizer.AddSpacer(10)
-        # Row idx = 1: Sensor firmware registration part:
+        # Row idx = 0: Sensor firmware registration part:
         vsizer.Add(wx.StaticText(self, label='Sensor Registration Setting:'),
                    flag=flagsT, border=2)
         vsizer.AddSpacer(10)
@@ -521,13 +500,13 @@ class PanelSetup(wx.Panel):
         pass 
         self.SetSizer(vsizer)
 
-#-----------------------------------------------------------------------------
+#--PanelSetup------------------------------------------------------------------
     def logtoServer(self, event):
         """ Call the mainFrame's <logtoServer> to establish SSL connection."""
         ServerName = self.serverchoice.GetString(self.serverchoice.GetSelection())
         if gv.iMainFrame: gv.iMainFrame.logtoServer(ServerName)
 
-#-----------------------------------------------------------------------------
+#--PanelSetup------------------------------------------------------------------
     def sigaSimuInput(self, event):
         """Call the mainFrame's <sigaSimuInput> fill in the simulation siguature."""
         if gv.iMainFrame: gv.iMainFrame.sigaSimuInput(event)
@@ -541,7 +520,7 @@ class LineChartExample(wx.Frame):
         panel = wx.Panel(self, -1)
         panel.SetBackgroundColour('WHITE')
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.linechart = PanelChart(panel, 100)
+        self.linechart = PanelChart(panel, recNum=60)
         hbox.Add(self.linechart)
         panel.SetSizer(hbox)
         self.Centre()
