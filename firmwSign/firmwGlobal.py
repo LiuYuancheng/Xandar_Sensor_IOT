@@ -14,6 +14,8 @@ import os
 dirpath = os.getcwd()
 print("firmwGlobal: Current working directory is : %s" %dirpath)
 
+APP_NAME = 'XAKA firmware sign tool_v1.1'
+
 # Server ip and port for connection: 
 LOCAL_IP = '127.0.0.1'
 SITCP_PORT = 5005   # port for firmware sign request.
@@ -25,7 +27,6 @@ SI_SERVER_CHOICE = {
     "Server_1 [192.168.0.100]"  : ('192.168.0.100', SITCP_PORT),
     "Server_2 [192.168.0.101]"  : ('192.168.0.101', SITCP_PORT)
 }
-
 
 #UI window ICON.
 ICON_PATH = "".join([dirpath, "\\firmwSign\\singtelIcon.ico"])

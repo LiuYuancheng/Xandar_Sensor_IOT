@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Name:        firmwGlobal.py
+# Name:        XAKAsensorGlobal.py
 #
 # Purpose:     This module is used set the Local config file as global value 
 #              which will be used in the other modules.
