@@ -157,7 +157,7 @@ class SensorReaderFrame(wx.Frame):
             self.sslClient.connect((ip, port))
             # send connect request cmd.
             self.sslClient.send(self.msgMgr.dumpMsg(action='CR'))
-            dataDict = self.msgMgr.loadMsg(self.sslClient.recv(gv.BUFFER_SIZE))
+            dataDict = self.msgMgr.loadMsg(self.sslClient.recv(BUFFER_SIZE))
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'CR' and dataDict['state']:
                 print("SConnetion: Connect to the server succesfully.")
             else:
@@ -169,7 +169,7 @@ class SensorReaderFrame(wx.Frame):
             
             data = (self.senId, self.sensorType, self.version, self.signature)
             self.sslClient.send(self.msgMgr.dumpMsg(action='RG', dataArgs=data))
-            dataDict = self.msgMgr.loadMsg(self.sslClient.recv(gv.BUFFER_SIZE))
+            dataDict = self.msgMgr.loadMsg(self.sslClient.recv(BUFFER_SIZE))
             if dataDict['act'] == 'HB' and dataDict['lAct'] == 'RG' and dataDict['state']:
                 #print("FirmwSign: The sensor is registered successfully.")
                 self.statusbar.SetStatusText("Sensor registration done.")

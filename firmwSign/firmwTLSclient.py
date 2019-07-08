@@ -40,7 +40,7 @@ class TLS_sslClient(object):
         self.ctx.use_certificate_file(gv.CSSL_CERT_PATH)
         self.ctx.load_verify_locations(gv.CA_PATH)
 
-#-----------------------------------------------------------------------------
+#--TLS_sslClient---------------------------------------------------------------
     def connect(self, ipaddr):
         """ Init the SSL socket to connect to the server.
             ipaddr = (str(ip), int(port))
@@ -53,11 +53,11 @@ class TLS_sslClient(object):
     def close(self):
         return self.sock.close()
 
-#-----------------------------------------------------------------------------
+#--TLS_sslClient---------------------------------------------------------------
     def recv(self, buffSZ):
         return self.sock.recv(buffSZ)
 
-#-----------------------------------------------------------------------------
+#--TLS_sslClient---------------------------------------------------------------
     def send(self, data):
         """ Send data to server, will convert not bytes type data to bytes 
             by using utf-8 encoding.
@@ -67,16 +67,16 @@ class TLS_sslClient(object):
             data = str(data).encode('utf-8')
         self.sock.send(data)
 
-#-----------------------------------------------------------------------------
+#--TLS_sslClient---------------------------------------------------------------
     def shutdown(self):
         return self.sock.shutdown()
 
-#-----------------------------------------------------------------------------
+#--TLS_sslClient---------------------------------------------------------------
     def _verifyCert(self, conn, cert, errnum, depth, ok):
         """ Verifiy the cerificate from server side."""
         certsubject = crypto.X509Name(cert.get_subject())
         commonname = certsubject.commonName
-        print('Got certificate: ' + commonname)
+        print('SSL client got certificate: ' + commonname)
         return ok
 
 #-----------------------------------------------------------------------------

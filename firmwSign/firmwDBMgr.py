@@ -172,7 +172,7 @@ class firmwDBMgr(object):
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(sql, rcdArgs)
-            print("DBmgr: This is the cursir UD: %s" %str(cur.lastrowid))
+            print("DBmgr: This is the cursir UD: <%s>" %str(cur.lastrowid))
             return cur.lastrowid
    
 #--firmwDBMgr------------------------------------------------------------------
