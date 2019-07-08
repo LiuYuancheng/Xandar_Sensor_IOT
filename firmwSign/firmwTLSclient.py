@@ -2,13 +2,14 @@
 #-----------------------------------------------------------------------------
 # Name:        TLS_sslClient.py
 #
-# Purpose:     This module is used to create a SSL client.   
+# Purpose:     This module is used to create a SSL client for the Transport Layer 
+#              Security communication.   
 #
 # Author:      Yuancheng Liu
 #
 # Created:     2019/05/13
-# Copyright:   YC
-# License:     YC
+# Copyright:   NUS – Singtel Cyber Security Research & Development Laboratory
+# License:     YC @ NUS
 #-----------------------------------------------------------------------------
 
 import os
@@ -33,7 +34,7 @@ class TLS_sslClient(object):
         self.ctx.set_options(SSL.OP_NO_SSLv2)
         self.ctx.set_options(SSL.OP_NO_SSLv3)
         # Demand a certificate
-        self.ctx.set_verify(SSL.VERIFY_PEER, self.verifyCert)
+        self.ctx.set_verify(SSL.VERIFY_PEER, self._verifyCert)
         # load the certifcate fils.
         self.ctx.use_privatekey_file(gv.CSSL_PRIK_PATH)
         self.ctx.use_certificate_file(gv.CSSL_CERT_PATH)
@@ -71,7 +72,7 @@ class TLS_sslClient(object):
         return self.sock.shutdown()
 
 #-----------------------------------------------------------------------------
-    def verifyCert(self, conn, cert, errnum, depth, ok):
+    def _verifyCert(self, conn, cert, errnum, depth, ok):
         """ Verifiy the cerificate from server side."""
         certsubject = crypto.X509Name(cert.get_subject())
         commonname = certsubject.commonName

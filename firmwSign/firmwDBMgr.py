@@ -65,6 +65,9 @@ class firmwDBMgr(object):
 #--firmwDBMgr------------------------------------------------------------------
     def addUser(self, args):
         """ Add a new user and its password in the DB. """
+        if len(args) != 3:
+            print("DBmgr: User register parameters missing <%s>" %str(args))
+            return False
         user, salt, pwd = args
         pwdhash = hashlib.sha256(bytes.fromhex(salt) + str(pwd).encode('utf-8')).hexdigest()
         # Check wether user in the DB already:
@@ -74,31 +77,29 @@ class firmwDBMgr(object):
             cur.execute(selectSQL, (str(user),))
             rows = cur.fetchall()
             if len(rows):
-                print("DBmgr: The user %s is exists" % str(user))
+                print("DBmgr: The user <%s> is in database." % str(user))
                 return False
-        print("DBmgr: Add user %s in to the data base" % str(user))
-        sql = ''' INSERT INTO userInFo(user, salt, pwdHash)
+        print("DBmgr: Add user <%s> into the data base." % str(user))
+        insertSQL = ''' INSERT INTO userInFo(user, salt, pwdHash)
                 VALUES(?,?,?) '''
-        with self.conn:
+        with self.conn: # use 'with' will do the auto-commit to database.
             cur = self.conn.cursor()
-            cur.execute(sql, (str(user), salt, str(pwdhash)))
+            cur.execute(insertSQL, (str(user), salt, str(pwdhash)))
         return True
 
 #--firmwDBMgr------------------------------------------------------------------
     def authorizeUser(self, user, pwd):
-        """ Authorize user and password. """
+        """ Authorize user and its password. """
         # Check wether user in the DB already:
         selectSQL = '''SELECT * FROM userInFo WHERE user=?'''
         with self.conn:
             cur = self.conn.cursor()
             cur.execute(selectSQL, (str(user),))
             rows = cur.fetchall()
-            if len(rows) == 0: return False
-            for row in rows:
-                user, salt, pwdhash = row
+            if len(rows):
+                _, salt, pwdhash = rows[0] # user ID is unique in the database.
                 if pwdhash == hashlib.sha256(bytes.fromhex(salt) + str(pwd).encode('utf-8')).hexdigest():
                     return True
-                return False
         return False
 
 #--firmwDBMgr------------------------------------------------------------------
@@ -110,7 +111,7 @@ class firmwDBMgr(object):
         signature ,seId, seType, seFwVersion, time = args
         selectSQL = '''SELECT * FROM firmwareInfo WHERE signatureServer=?'''
         conn = sqlite3.connect(gv.DB_PATH, check_same_thread=False)
-        # Create a new connect as this function is called by the subthread. 
+        # Create a new connection as this function is called by the sub-thread. 
         # To avoid the error: "ProgrammingError: SQLite objects created in 
         # a thread can only be used in that same thread"  
         with conn:
@@ -163,6 +164,7 @@ class firmwDBMgr(object):
         """ Create a firmware sign record in the data base."""
         if len(rcdArgs) != 10: 
             print("DBmgr: The firmware sign inforamtion <%s> element missing." %str(rcdArgs))
+            return None
         # Insert sql request.
         sql = ''' INSERT INTO firmwareInfo( sensorID, signerID,challenge, swatt, date, type, version, certPath, signatureClient, signatureServer)
                 VALUES(?,?,?,?,?,?,?,?,?,?) '''
