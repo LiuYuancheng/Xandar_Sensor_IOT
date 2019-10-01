@@ -131,7 +131,7 @@ class SensorReaderFrame(wx.Frame):
             sizer.Add(datalabel)
         # Add the server selection and regist button.
         self.serverchoice = wx.Choice(
-            bgPanel, -1, size=(190, 20), choices=list(gv.RG_SERVER_CHOICE.keys()), name='Server')
+            bgPanel, -1, size=(190, 20), choices=list(gv.SI_SERVER_CHOICE.keys()), name='Server')
         self.serverchoice.SetSelection(0)
         sizer.Add(self.serverchoice)
         self.regBt = wx.Button(bgPanel, label='Sensor registration.', size=(190, 23))
