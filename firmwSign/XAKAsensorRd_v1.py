@@ -47,10 +47,10 @@ class SensorReaderFrame(wx.Frame):
         self.SetBackgroundColour(wx.Colour(200, 210, 200))
         gv.iMainFrame = self
         # Init parameters.
-        self.activeFlag = False     # whether we active the sensor data reading.
+        self.activeFlag = True     # whether we active the sensor data reading.
         self.dataList = []          # list to store the sensor data.
         self.senId = self.version = ''
-        self.signature = '44c88023c0a6da30e78e1e699d01436cbf987f06213d15b64e0a972952fbd0a3ec578d33a67d34024e8851b776d7af7999f5f175c896c363ed4a93f6cd104a454eb8a48ab32da07489c1daee6614a45561c8823e462e72ce458a78e3f35f68ae157a027d165eb7dec9c8910af34723a9e14132943a9788bfbdc2c904d2207c6a36e92e647c3b450d14697856c2906f94b122a3a01966d48f72f3b29f8472a24813f471be288522ee68ad7de57ec9551722aa9dafdba991516535e618c8a3a94907ca7a46ff11e27bb254497a306685066a86c34eaa572cbf4ab44eaef0829ff1d6f0490ab8d0dece01cf031eda5a1f2690e8579b4cad5cf650846ed6bd4085db'
+        self.signature = '123'#'44c88023c0a6da30e78e1e699d01436cbf987f06213d15b64e0a972952fbd0a3ec578d33a67d34024e8851b776d7af7999f5f175c896c363ed4a93f6cd104a454eb8a48ab32da07489c1daee6614a45561c8823e462e72ce458a78e3f35f68ae157a027d165eb7dec9c8910af34723a9e14132943a9788bfbdc2c904d2207c6a36e92e647c3b450d14697856c2906f94b122a3a01966d48f72f3b29f8472a24813f471be288522ee68ad7de57ec9551722aa9dafdba991516535e618c8a3a94907ca7a46ff11e27bb254497a306685066a86c34eaa572cbf4ab44eaef0829ff1d6f0490ab8d0dece01cf031eda5a1f2690e8579b4cad5cf650846ed6bd4085db'
         self.serialPort = DE_COMM   # the serial port name we are going to read.
         self.serComm = None # serial comm handler used to read the sensor data. 
         # Init the UI.
@@ -157,7 +157,7 @@ class SensorReaderFrame(wx.Frame):
         # Set sensor ID and version for resigter
         if not (self.senId and self.version):
             self.senId, self.version = self.dataList[0], self.dataList[8]
-        #if not self.activeFlag: return
+        if not self.activeFlag: return
         # Update the UI if the sensor registed successfully.
         self.updateUIPanels()
 

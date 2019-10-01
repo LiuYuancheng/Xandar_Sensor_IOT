@@ -63,7 +63,7 @@ class FirmwareSignTool(wx.Frame):
         self.rsaEncryptor = chilkat.CkRsa()
         if not self.rsaEncryptor.UnlockComponent(gv.RSA_UNLOCK):
             print("RsaEncryptor: RSA component unlock failed.")
-            sys.exit()
+            #sys.exit()
         self.rsaEncryptor.put_EncodingMode(gv.RSA_ENCODE_MODE)
         # Init the UI here.
         self.hidenWidgetList = [] # widget will show if login in successful.
