@@ -41,21 +41,36 @@ The goal of this project is to design and validate an end-to-end protection pipe
 
 
 
+------
+
+### 2. Project Overview
+
+In an IoT supply chain, malicious activities can occur at any stage, including firmware development, flashing, distribution, and deployment. Therefore, a robust protection mechanism must ensure both firmware authenticity at provisioning time and integrity verification during runtime.
+
+This project proposes an end-to-end firmware protection framework that spans from initial firmware flashing to real-time device operation. The system integrates hardware-based isolation with physics-based attestation to detect both static and dynamic threats. The project structure diagram is shown below: 
+
+![](doc/img/s_03.png)
+
+The overall system architecture includes the following key components:
+
+- **Xandar IoT Device Platform** : A reconfigurable IoT testbed built using a [Xandar People Detection Radar](https://xkcorp.com/) sensor integrated with a Raspberry Pi-3B, supporting multiple files firmware execution and configurations.
+- **IoT Runtime Attestation via PATT** : Integration of Physics-based Attestation of Control Systems (PATT) client, which validates firmware integrity by correlating software execution with expected physical behavior.
+- **IoT Trusted Execution Environment (TEE)** : Deployment of a secure execution environment on Raspberry Pi using shadow-box-for-arm to protect radar sensor data fetching code and attestation logic from tampering.
+- **Secure Firmware Provisioning Pipeline** : A manufacturer-side firmware signing client and a service provider–side signature authority server to ensure firmware authenticity during the flashing process.
+- **Cloud-Based Verification Infrastructure** : An IoT verification server that performs device authentication and integrity validation by coordinating with the signature authority and processing attestation results.
 
 
-#### 1.1 Project Overview
 
-A malicious attacker could insert defect or malware, introduce counterfeit, pirate IP, or launch any malicious attack, at any point in the supply chain. Hence, it is importance to protect the malware integrity of the entire supply chain. In this POC we want to protect the firmware's Integrity from the steps in is flashing in the IoT to the time user start to use it. The system technology stack overview is shown blow: 
+------
 
-- In this project I use the Xandar_People_Detection_Radar(Sensor) and a Raspberry PI to build a reconfigurable IoT device with multiple firmware files. 
-- For real time firmware execution attestation, I use the algorithm introduced in paper [PATT: Physics-based Attestation of Control Systems](https://repository.sutd.edu.sg/esploro/outputs/conferenceProceeding/PAtt-Physics-based-Attestation-of-Control-Systems/9911651509846) . 
-- For protecting the PATT information and code, I use the [shadow-box-for-arm](https://github.com/kkamagui/shadow-box-for-arm) to build the Arm Trusted Execution Environment
-- For Firmware flashing attestation, I create a firmware signal clint running in the manufacturer side and one signature authority server running in the IoT service provider side. 
-- For Firmware integrity assurance verification, I create a IoT verification server running in the IoT service provider side to receive the IoT's attestation PATT request connect to the signature authority server to do the IoT authentication.  
+### 3. System Workflow
 
-#### 1.2 System Work Flow 
+The system enforces firmware integrity through two main workflows: 
 
-**1.2.1 Firmware flashing attestation workflow** 
+- (1) secure firmware flashing during manufacturing 
+- (2) real-time attestation during device operation.
+
+#### 3.1 Firmware Flashing Attestation Workflow
 
 The Firmware flashing attestation work flow is shown in the below diagram: 
 
@@ -80,7 +95,16 @@ Update message : M = ID + version + sensor type + flashing timestamp
 Signature : Sign(M) = M + MD5(firmware)
 ```
 
-**1.2.1 IoT device real time attestation** 
+During the manufacturing phase, firmware authenticity and integrity are verified before deployment to the IoT device. The process involves a challenge-response mechanism combined with cryptographic signing:
+
+- The manufacturer client authenticates with the signature authority server.
+- The server issues a challenge value (*r*) for attestation.
+- The firmware is locally verified using the PATT algorithm and signed.
+- The signed firmware and metadata (*M*) are uploaded to the server.
+- The server validates the submission and generates a secondary signature (*Sign(S)*) to certify the firmware.
+- The certified firmware is then securely flashed onto the IoT device.
+
+#### 3.2  IoT Device Real-Time Attestation
 
 The IoT device real time attestation is  shown in the below diagram: 
 
@@ -105,3 +129,19 @@ sequenceDiagram
     IoT_Monitor_Hub ->> IoT_Monitor_Hub: 14. Start receive the IoT device data stream if step 13 success
 ```
 
+After deployment, the system continuously verifies firmware integrity through runtime attestation:
+
+- The IoT device registers with the monitoring hub and responds to attestation requests.
+- The monitoring hub validates stored firmware metadata and communicates with the signature authority server.
+- A new challenge (*r*) is issued to the device.
+- The device executes the PATT algorithm to compute a runtime checksum (*N*).
+- The result is verified against server-side records to confirm firmware integrity.
+- Upon successful verification, the device is authorized to transmit operational data.
+
+This runtime verification mechanism enables detection of firmware tampering, unauthorized modifications, or anomalous behavior during operation.
+
+
+
+------
+
+### 4. Design of the Xandar IoT Device 
