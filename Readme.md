@@ -211,4 +211,116 @@ By combining sensing, visualization, and security mechanisms within a single pla
 
 ------
 
-### 5. Design of the 
+### 5. Design of the IoT TrustZone 
+
+The TEE is used to securely store and execute critical components, including the device’s unique identity and PATT attestation credentials.I use the project Trust-Zone/Env (OPTEE) on Raspberry PI I developed : https://github.com/LiuYuancheng/Raspberry_PI_OPTEE and the https://github.com/kkamagui/shadow-box-for-arm project to implement the Trusted Execution Environment to protect the Unique ID and PATT credential files. the work flow is shown below: 
+
+![](doc/img/s_08.png)
+
+#### 5.1 Additional steps setup shadow-box
+
+The Shadow-Box environment is deployed by following the “Build Shadow-Box for ARM and Make Secure Pi with Raspberry Pi 3” procedure from the official repository. However, several additional adjustments are required to ensure proper functionality on a Raspberry Pi 3 Model B.
+
+**5.1.1 Root Filesystem and Boot Image Synchronization**
+
+During the step *“**3.5.1** Copy OP-TEE OS with Shadow-Box for ARM and New Linux Kernel to Raspbian OS”*, it is critical to ensure that the required image files are correctly copied into both the `boot` and `boot1` directories as shown below:
+
+![](doc/img/s_09.png)
+
+In addition, the root filesystem must be extracted into the `boot1` directory using:
+
+```
+sudo gunzip -cd $HOME/shadow-box/gen_rootfs/filesystem.cpio.gz | sudo cpio -iudmv "boot1/*"
+```
+
+Also verify that the kernel module directory: `/rootfs/lib/modules/4.6.3-17586g76cacae` exists on the Raspberry Pi SD card. This specific kernel version is required for compatibility with Shadow-Box as shown below:
+
+![](doc/img/s_10.png)
+
+**5.1.2 shadow_box_client Binary Validation**
+
+During activation (step: 3.6.5. Activate Shadow-Box for ARM and  Start Secure Pi), running:
+
+```
+sudo shadow_box_client -g
+```
+
+may produce no output if the client binary is incorrectly deployed.
+
+To troubleshoot:
+
+- Check `/bin/shadow_box_client` file size
+- If the size is abnormally small (e.g., ~1KB), the binary is corrupted or empty
+
+Fix step as shown below:
+
+![](doc/img/s_11.png)
+
+- Rebuild the binary from the Shadow-Box project directory:
+
+  ```
+  shadow-box/optee_examples_shadow_box_client/host
+  ```
+
+- Run `make` if the executable is missing
+
+- Copy the rebuilt binary to the Raspberry Pi:
+
+  ```
+  /bin/shadow_box_client
+  ```
+
+After copying, sign the binary using:
+
+```
+sudo ./img_sign.sh /bin/shadow_box_client
+```
+
+![](doc/img/s_12.png)
+
+**5.1.3 Kernel Version Verification**
+
+Before enabling Shadow-Box protection:
+
+![](doc/img/s_13.png)
+
+```
+sudo shadow_box_client -s
+```
+
+Ensure that the system is running the correct kernel version:
+
+```
+sudo uname -r
+```
+
+The output must match:
+
+```
+4.6.3-17586g76cacae
+```
+
+Any mismatch (e.g., newer kernels like 4.17+) may cause Shadow-Box to fail.
+
+**5.1.4 Execution Path Requirement**
+
+When executing Shadow-Box client in section 3.6.6. Check Your Secure Pi Remotely  commands such as:
+
+![](doc/img/s_14.png)
+
+```
+sudo shadow_box_client -l
+```
+
+it is necessary to first navigate to the Shadow-Box project directory:
+
+```
+cd $HOME/shadow-box-for-arm
+```
+
+Failing to do so may result in execution errors due to missing relative paths or dependencies.
+
+
+
+------
+
