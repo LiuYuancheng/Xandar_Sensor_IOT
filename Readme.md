@@ -324,3 +324,117 @@ Failing to do so may result in execution errors due to missing relative paths or
 
 ------
 
+### 6. Device Manufacturer Initial Firmware Flashing
+
+During the manufacturing phase, when the IoT device firmware is flashed into the device’s ROM, a **firmware signing and registration mechanism** is introduced to ensure authenticity and prevent unauthorized device cloning.
+
+Each firmware instance is bound to a **unique cryptographic signature**, generated at flashing time. This mechanism ensures that even if an attacker obtains a firmware image, flashing tool, or unused hardware, they cannot produce a valid device that can authenticate with the backend system.
+
+#### **6.1 System Architecture**
+
+The firmware flashing and verification system consists of two main components:
+
+**Firmware Flashing Client** -- A client application running on the manufacturer’s workstation. It is responsible for:
+
+- Authenticating with the server
+- Generating firmware attestation data
+- Flashing firmware and signatures into the IoT device
+
+**Firmware Verification Server** -- A backend service deployed on the IoT service provider side. It is responsible for:
+
+- Verifying firmware integrity and client authenticity
+- Generating server-side signatures
+- Recording device registration data in a secure database
+
+#### **6.2 Firmware Flashing Workflow**
+
+The firmware provisioning process consists of three main steps:
+
+**6.2.1 Step 1: System Initialization and Client Authentication**
+
+The manufacturer must authenticate using valid credentials (username and password) before accessing the firmware flashing functionality. Unauthorized users are denied access. The program execution flow is shown in the Figure below:
+
+![](doc/img/s_15.png)
+
+Once authentication is successful:
+
+- The server generates and sends a **random SWATT challenge string** to the client
+- The client enables firmware selection and preparation for attestation
+
+This challenge-response mechanism ensures freshness and prevents replay attacks.
+
+**6.2.2 Step 2: Client Signature Generation and Server Certification**
+
+The program execution flow is shown in the Figure below: 
+
+![](doc/img/s_16.png)
+
+After selecting the firmware:
+
+1. **SWATT-Based Integrity Measurement**
+    The client computes a firmware checksum using the SWATT algorithm based on the received challenge string.
+    The server independently performs the same computation for verification.
+
+2. **Client-Side Signature Generation**
+    The client constructs a metadata message:
+
+   ```
+   M = IoT_ID + Signer_ID + SWATT_value + Timestamp + Device_Type + Firmware_Version
+   ```
+
+   This message is signed using the client’s private SSL key to generate:
+
+   ```
+   Sign_client(M)
+   ```
+
+3. **Server Verification and Signature Issuance**
+    The client sends *(M, Sign_client(M))* to the server.
+    The server performs:
+
+   - SWATT value verification
+   - Client signature validation
+
+   Upon successful verification, the server generates a **server signature**:
+
+   ```
+   Sign_server(S) = Sign[M + Sign_client(M)]
+   ```
+
+4. **Firmware Flashing**
+    The firmware, along with the server signature *Sign_server(S)*, is flashed into the IoT device’s ROM.
+
+5. Database Registration
+
+   The server stores the following records:
+
+   - Device metadata (M)
+   - Client signature
+   - Server signature
+
+This step establishes a **trusted binding between the firmware, device identity, and manufacturer**.
+
+**6.2.3 Step 3: IoT Device Verification During Operation**
+
+When the IoT device connects to the backend system:
+
+- It retrieves the stored **server signature** and associated metadata from ROM
+- It sends this information to the IoT server as part of its registration request
+
+The server then:
+
+- Validates the received data against its database records
+- Confirms the authenticity and integrity of the firmware
+
+Only devices with valid, verifiable signatures are allowed to connect and transmit data. Any mismatch results in rejection, effectively preventing:
+
+- Unauthorized firmware modification
+- Device cloning or spoofing
+- Use of unregistered or tampered devices
+
+>  Firmware Flashing Sign program code : https://github.com/LiuYuancheng/Xandar_Sensor_IOT/tree/master/firmwSign
+
+
+
+------
+
