@@ -145,3 +145,70 @@ This runtime verification mechanism enables detection of firmware tampering, una
 ------
 
 ### 4. Design of the Xandar IoT Device 
+
+The IoT device is built around a Xandar Kardian people detection radar sensor and a Raspberry Pi-3B to supports real-time sensing and visualization, and also integrates securely with the proposed firmware protection pipeline, including Trusted Execution Environment (TEE) isolation and physics-based attestation. The connection between use a CAT5-USB cable as shown below: 
+
+![](doc/img/s_04.png)
+
+The the Raspberry Pi use its wifi module to connect to the internet. A custom application, referred to as **Xandar Sensor App**, is implemented on the device to collect, process, and visualize sensor data, then connect the the IoT hub server. The application is designed to support both single-sensor and multi-sensor configurations.
+
+#### 4.1 Sensor Data Visualization UI 
+
+This module provides real-time and historical visualization of sensor outputs as shown below:
+
+![](doc/img/s_05.png)
+
+It displays:
+
+- Current detected people count
+- Average people count over time
+- Normalized people count (post-processed value for stability and accuracy)
+
+Additional features include:
+
+- Display of sensor metadata such as sensor ID, connection interface, and data sequence index
+- A pause/resume mechanism to allow inspection of live data streams
+- A detailed parameter panel exposing up to 36 sensor-specific parameters for in-depth analysis
+- Multi-sensor switching via tab-based navigation
+
+This dashboard plays a critical role in validating both sensor behavior and the consistency of firmware execution, which is later leveraged by the attestation mechanism.
+
+#### 4.2 Top-View Area Monitoring UI
+
+This module provides a spatial visualization of the monitored indoor environment as shown below:
+
+![](doc/img/s_06.png)
+
+- A **top-view map** displaying sensor placement and coverage
+- Real-time visualization of **people density distribution** across the area
+- Sensor connectivity status and live data feedback
+
+This view helps correlate physical observations with sensor outputs, which is particularly important for validating the assumptions used in the **PATT (Physics-based Attestation)** model.
+
+#### 4.3 Top-View Area Monitoring Dashboard
+
+This module provides a spatial visualization of the monitored indoor environment as shown below:
+
+![](doc/img/s_07.png)
+
+- A **top-view map** displaying sensor placement and coverage
+- Real-time visualization of **people density distribution** across the area
+- Sensor connectivity status and live data feedback
+
+This view helps correlate physical observations with sensor outputs, which is particularly important for validating the assumptions used in the **PATT (Physics-based Attestation)** model.
+
+#### 4.4 Security Integration Considerations
+
+The IoT device is designed with security as a core requirement:
+
+- Sensitive components, including the PATT algorithm and firmware verification logic, are protected within a Trusted Execution Environment using Shadow-Box-For-Arm
+- Firmware integrity is verified both during flashing and at runtime
+- Sensor data used for attestation is safeguarded against tampering
+
+By combining sensing, visualization, and security mechanisms within a single platform, this IoT device serves as a practical and extensible testbed for evaluating supply chain protection strategies.
+
+
+
+------
+
+### 5. Design of the 
