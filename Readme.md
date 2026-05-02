@@ -438,3 +438,126 @@ Only devices with valid, verifiable signatures are allowed to connect and transm
 
 ------
 
+### **7. Real-Time Firmware Authorization**
+
+To ensure continuous integrity of executable files and firmware during device operation, this project implements a **real-time firmware authorization mechanism** based on a Trusted Execution Environment (TEE). The solution leverages OP-TEE (developed by Linaro), which enables secure execution alongside a non-secure Linux operating system on ARM platforms.
+
+All sensitive operations—such as checksum computation, cryptographic processing, and key handling—are executed within the **Secure World**, preventing tampering from potentially compromised application layers.
+
+#### **7.1 System Architecture**
+
+The real-time authorization system is composed of three main components:
+
+**Trust-Application (Secure World – Raspberry Pi)** -- Runs inside the TEE and is responsible for:
+
+- AES-256 key management
+- Encryption and decryption operations
+- SWATT-based file integrity measurement
+
+**Trust-Client (Normal World – Raspberry Pi)** -- Acts as a bridge between the system and the TEE:
+
+- Loads configuration parameters
+- Communicates with the Trust-Application via OP-TEE
+- Retrieves target files for verification
+- Handles TCP communication with the backend server
+
+**Trust-Server (Backend System)** -- Provides centralized verification and record management:
+
+- Generates session keys and attestation challenges
+- Performs independent integrity verification
+- Stores and retrieves reference data from a database
+
+#### **7.2 Authorization Workflow**
+
+The system performs real-time integrity authorization in four stages:
+
+**7.2.1 Step 1: System Initialization**
+
+During initialization the the Trust-Client loads configuration parameters from a local file, including:
+
+- Server IP and port
+- Target file or executable to verify
+- Firmware version
+- SWATT challenge length and iteration count
+
+The client starts the **TEE supplicant service** to interface with the OP-TEE driver, the program execution flow is shown : 
+
+![](doc/img/s_17.png)
+
+- A secure session is established between the Trust-Client (Normal World) and the Trust-Application (Secure World)
+- A TCP connection is established with the Trust-Server
+
+This step prepares both secure and non-secure components for coordinated operation.
+
+**7.2.2 Step 2: AES-256 Session Key Exchange**
+
+To secure communication, The program execution flow is shown:
+
+![](doc/img/s_18.png)
+
+1. The Trust-Application selects a pre-provisioned AES-256 key (*Key A*) from its secure key store and sends the corresponding key ID to the server.
+2. The Trust-Server retrieves the same key (*Key A*) from its database using the device ID and key ID.
+3. The server generates a random **session key (Key B)** for this session.
+4. Key B is encrypted using Key A and transmitted to the client.
+5. The Trust-Application decrypts and securely stores Key B for subsequent communication.
+
+Next:
+
+- The server generates a random SWATT challenge string
+- The challenge is encrypted using Key B and sent to the Trust-Application
+
+This ensures both **confidentiality** and **freshness** of the attestation process.
+
+**7.2.3 Step 3: File Integrity Authorization**
+
+Once the session key and challenge are established, the program execution flow is shown: 
+
+![](doc/img/s_19.png)
+
+- The Trust-Client loads the target file from the local file system
+- The Trust-Server retrieves the corresponding reference file or baseline data
+
+Then:
+
+- The Trust-Application computes the file’s integrity measurement using SWATT based on the received challenge
+- The Trust-Server independently performs the same computation
+
+The Trust-Application:
+
+- Encrypts the computed checksum using Key B
+- Sends the result to the Trust-Server
+
+The server compares the received value with its own result to determine whether the file has been modified.
+
+**7.2.4 Step 4: Authorization Result Feedback**
+
+After verification, the program execution flow is shown: 
+
+![](doc/img/s_20.png)
+
+- The Trust-Server encrypts the authorization result along with the expected SWATT value using Key B
+- The response is sent back to the Trust-Client
+
+The Trust-Application:
+
+- Decrypts the response
+- Verifies that the returned SWATT value matches its locally computed result (ensuring response integrity)
+
+If authorization is successful, the Trust-Client collects runtime metadata of the verified process, including:
+
+- Process ID (PID)
+- Execution user
+- File descriptors
+- Memory usage and offsets
+- Node/system information
+- Linked library files
+
+This metadata is forwarded to the Trust-Server for monitoring and auditing, if authorization **fails**:
+
+- The Trust-Client removes or blocks execution of the compromised file
+- The event can be logged or trigger further security actions
+
+
+
+------
+
