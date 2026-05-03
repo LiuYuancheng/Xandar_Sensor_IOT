@@ -23,6 +23,31 @@ This case study is a Proof of Concept for IOT Supply Chain Protection, in real p
 
 [TOC]
 
+- [IoT Supply Chain Protection Case Study : Use Shadow-Box-For-Arm and PATT for Firmware Integrity Assurance](#iot-supply-chain-protection-case-study---use-shadow-box-for-arm-and-patt-for-firmware-integrity-assurance)
+    + [1. Introduction](#1-introduction)
+    + [2. Project Overview](#2-project-overview)
+    + [3. System Workflow](#3-system-workflow)
+      - [3.1 Firmware Flashing Attestation Workflow](#31-firmware-flashing-attestation-workflow)
+      - [3.2  IoT Device Real-Time Attestation](#32--iot-device-real-time-attestation)
+    + [4. Design of the Xandar IoT Device](#4-design-of-the-xandar-iot-device)
+      - [4.1 Sensor Data Visualization UI](#41-sensor-data-visualization-ui)
+      - [4.2 Top-View Area Monitoring UI](#42-top-view-area-monitoring-ui)
+      - [4.3 Top-View Area Monitoring Dashboard](#43-top-view-area-monitoring-dashboard)
+      - [4.4 Security Integration Considerations](#44-security-integration-considerations)
+    + [5. Design of the IoT TrustZone](#5-design-of-the-iot-trustzone)
+      - [5.1 Additional steps setup shadow-box](#51-additional-steps-setup-shadow-box)
+    + [6. Device Manufacturer Initial Firmware Flashing](#6-device-manufacturer-initial-firmware-flashing)
+      - [6.1 System Architecture](#61-system-architecture)
+      - [6.2 Firmware Flashing Workflow](#62-firmware-flashing-workflow)
+    + [7. Real-Time Firmware Authorization](#7-real-time-firmware-authorization)
+      - [7.1 System Architecture](#71-system-architecture)
+      - [7.2 Authorization Workflow](#72-authorization-workflow)
+    + [8. Conclusion and Reference](#8-conclusion-and-reference)
+      - [8.1 Conclusion](#81-conclusion)
+      - [8.2 Reference Link](#82-reference-link)
+
+
+
 ------
 
 ### 1. Introduction 
@@ -330,7 +355,7 @@ During the manufacturing phase, when the IoT device firmware is flashed into the
 
 Each firmware instance is bound to a **unique cryptographic signature**, generated at flashing time. This mechanism ensures that even if an attacker obtains a firmware image, flashing tool, or unused hardware, they cannot produce a valid device that can authenticate with the backend system.
 
-#### **6.1 System Architecture**
+#### 6.1 System Architecture
 
 The firmware flashing and verification system consists of two main components:
 
@@ -346,7 +371,7 @@ The firmware flashing and verification system consists of two main components:
 - Generating server-side signatures
 - Recording device registration data in a secure database
 
-#### **6.2 Firmware Flashing Workflow**
+#### 6.2 Firmware Flashing Workflow
 
 The firmware provisioning process consists of three main steps:
 
@@ -438,13 +463,13 @@ Only devices with valid, verifiable signatures are allowed to connect and transm
 
 ------
 
-### **7. Real-Time Firmware Authorization**
+### 7. Real-Time Firmware Authorization
 
 To ensure continuous integrity of executable files and firmware during device operation, this project implements a **real-time firmware authorization mechanism** based on a Trusted Execution Environment (TEE). The solution leverages OP-TEE (developed by Linaro), which enables secure execution alongside a non-secure Linux operating system on ARM platforms.
 
 All sensitive operations—such as checksum computation, cryptographic processing, and key handling—are executed within the **Secure World**, preventing tampering from potentially compromised application layers.
 
-#### **7.1 System Architecture**
+#### 7.1 System Architecture
 
 The real-time authorization system is composed of three main components:
 
@@ -467,7 +492,7 @@ The real-time authorization system is composed of three main components:
 - Performs independent integrity verification
 - Stores and retrieves reference data from a database
 
-#### **7.2 Authorization Workflow**
+#### 7.2 Authorization Workflow
 
 The system performs real-time integrity authorization in four stages:
 
@@ -561,3 +586,28 @@ This metadata is forwarded to the Trust-Server for monitoring and auditing, if a
 
 ------
 
+### 8. Conclusion and Reference 
+
+#### 8.1 Conclusion 
+
+This case study presented a proof-of-concept implementation for securing IoT firmware throughout the supply chain and device lifecycle by combining hardware-assisted isolation with physics-based runtime attestation. By integrating **Shadow-Box-for-ARM** as a lightweight Trusted Execution Environment and **PATT** for continuous integrity verification, the proposed system addresses critical vulnerabilities at both manufacturing provisioning and operational stages.
+
+The experimental deployment on a Xandar people-detection radar device with Raspberry Pi-3B demonstrated several key contributions: (1) secure firmware flashing with cryptographic binding between device identity and firmware image; (2) TEE-protected sensitive assets including attestation logic and unique credentials; and (3) real-time integrity verification enabling detection of tampering or unauthorized modifications during device operation.
+
+While this implementation serves as a functional PoC on ARM-based IoT hardware, practical production deployment would require additional considerations including scalability to large device fleets, key management infrastructure, performance optimization for resource-constrained devices, and robustness against advanced physical attacks. Nevertheless, the demonstrated approach offers a viable direction for enhancing IoT supply chain resilience, showing that even modest ARM platforms can support meaningful firmware integrity guarantees when combining TEE isolation with behavior-based attestation mechanisms.
+
+#### 8.2 Reference Link
+
+- https://github.com/kkamagui/shadow-box-for-arm
+- https://repository.sutd.edu.sg/esploro/outputs/conferenceProceeding/PAtt-Physics-based-Attestation-of-Control-Systems/9911651509846
+- https://www.linkedin.com/pulse/ot-cyber-security-workshop-case-study-01-build-trust-zone-liu-h3chc/?trackingId=X%2FbjtY0uCv0L4JWW2qGckw%3D%3D
+- https://www.linkedin.com/pulse/people-detection-radar-iot-yuancheng-liu-yovdc/?trackingId=u18yFQdOGjT%2FN6vn353Qeg%3D%3D
+- https://github.com/LiuYuancheng/Xandar_Sensor_IOT
+- https://github.com/LiuYuancheng/Xandar_PPL_Sensor_IOT_Web
+- https://github.com/LiuYuancheng/Xandar_Sensor_App
+
+
+
+------
+
+> Last edit by LiuYuancheng(liu_yuan_cheng@hotmail.com) at 02/05/2026, if you have any problem please free to message me.
