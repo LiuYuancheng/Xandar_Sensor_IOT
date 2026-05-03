@@ -60,7 +60,7 @@ The complexity of the IoT supply chain makes it particularly vulnerable to attac
 
 Where an attacker replaced legitimate sensor firmware during transit, ultimately causing system malfunction and device failure during operation.
 
-To address these challenges, ensuring firmware integrity across the entire device lifecycle—from manufacturing to deployment and runtime—is critical. This project presents a proof-of-concept (PoC) system designed to protect IoT firmware integrity by combining secure execution and continuous attestation mechanisms.
+To address these challenges, ensuring firmware integrity across the entire device lifecycle from manufacturing to deployment and runtime is critical. This project presents a proof-of-concept (PoC) system designed to protect IoT firmware integrity by combining secure execution and continuous attestation mechanisms.
 
 The goal of this project is to design and validate an end-to-end protection pipeline that safeguards IoT firmware across both manufacturing and operational phases. By combining secure execution with behavior-based attestation, the proposed approach addresses limitations of traditional static verification methods and enhances resilience against supply chain tampering and runtime compromise. 
 
